@@ -1,10 +1,12 @@
+from drf_yasg.utils import swagger_auto_schema
+
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from board.serializers import BoardSerializer
+from board.serializers import BoardSerializer, BoardCreateSerializer
 
-
+@swagger_auto_schema(method='post', request_body=BoardCreateSerializer)
 @api_view(['POST'])
 def create_board(request):
     serializer = BoardSerializer(data=request.data)
