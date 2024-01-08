@@ -1,13 +1,15 @@
 FROM python:3.12
 
-WORKDIR /backend
+WORKDIR /app
 
+COPY . /app
+
+RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 RUN pip install mysqlclient
 RUN pip install drf-yasg
+RUN pip install Pillow
 
-COPY . /backend
-
-EXPOSE 8080
+EXPOSE 8000
 
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
