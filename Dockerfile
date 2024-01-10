@@ -6,6 +6,7 @@ COPY . /app
 
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
+RUN pip install channels
 RUN pip install mysqlclient
 RUN pip install drf-yasg
 RUN pip install Pillow
