@@ -13,4 +13,4 @@ class Book(models.Model):
     age = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
-    is_deleted = models.DateTimeField(default=None, null=True)
+    is_deleted = models.BooleanField(default=False)
