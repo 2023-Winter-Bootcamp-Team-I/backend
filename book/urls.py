@@ -10,5 +10,5 @@ from .write_page import WritePage
 
 urlpatterns = [
     path("books/", BaseBook.as_view()),
-    re_path(r"book/$", WritePage.as_asgi()),
+    re_path(r"books/$", WritePage.as_asgi()),
 ]
