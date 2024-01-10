@@ -42,7 +42,10 @@ INSTALLED_APPS = [
     'book',
     'page',
     'drf_yasg',
+    'channels',
 ]
+
+ASGI_APPLICATION = "backend.asgi.application"
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
