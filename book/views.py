@@ -20,11 +20,11 @@ class BaseBook(APIView):
             response_serializer = BookCreateSerializer(book_instance)
             return Response({
                 'message': '초기 정보 입력 완료',
-                'data': response_serializer.data
+                'result': response_serializer.data
             }, status.HTTP_201_CREATED)
         return Response({
             'message': '유효하지 않은 입력값',
-            'data': serializer.errors
+            'result': serializer.errors
         }, status.HTTP_400_BAD_REQUEST)
 
 class ChoiceContent(APIView):
@@ -37,9 +37,9 @@ class ChoiceContent(APIView):
             response_serializer = ContentChoiceSerializer(book_instance)
             return Response({
                 'message': '글 선택 완료',
-                'data': response_serializer.data
+                'result': response_serializer.data
             }, status.HTTP_200_OK)
         return Response({
             'message': '뭔가 문제 있음',
-            'data': serializer.errors
+            'result': serializer.errors
         }, status.HTTP_400_BAD_REQUEST)
