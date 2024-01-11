@@ -53,14 +53,15 @@ from django.db import models
 class User(models.Model):
     user_id = models.AutoField(primary_key=True)
     password = models.CharField(max_length=20)
-    email = models.EmailField(unique=True)  # 이메일 필드가 따로 있네용?
+    email = models.EmailField(unique=True)
     name = models.CharField(max_length=20)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True, null=True)  # Null값 이 가능한데...
+    updated_at = models.DateTimeField(auto_now=True, null=True)
     is_deleted = models.BooleanField(default=False)
 
     def update_date(self):
         self.updated_at = timezone.now()
         self.save()
+        
     class Meta:
         db_table = 'user'
