@@ -5,4 +5,3 @@ urlpatterns = [
     path('users/signup/', create_user, name='signup'),
     path('users/signin/', login_view, name='login'),
 ]
-

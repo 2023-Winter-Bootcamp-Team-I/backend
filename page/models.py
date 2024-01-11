@@ -13,4 +13,4 @@ class Page(models.Model):
     image_url = models.ImageField(upload_to="", max_length=500)  # upload_to 처리
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
-    is_deleted = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)  # 확인바랍니다
