@@ -1,7 +1,7 @@
 from django.urls import path, include
 
 from .views import (
-    BaseBook, ChoiceContent
+    BaseBook, ChoiceContent,
 )
 
 from django.urls import re_path

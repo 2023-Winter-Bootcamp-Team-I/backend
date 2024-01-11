@@ -6,7 +6,9 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from book.serializers import BookSerializer, BookCreateSerializer, ContentSerializer, ContentChoiceSerializer
+from book.models import Book
+from book.serializers import BookSerializer, BookCreateSerializer, ContentSerializer, ContentChoiceSerializer, \
+    UserBookListSerializer, UserBookSerializer
 
 
 #동화책 초기 정보 불러오기
@@ -27,6 +29,19 @@ class BaseBook(APIView):
             'result': serializer.errors
         }, status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(manual_parameters=[
+        openapi.Parameter('user_id', openapi.IN_QUERY, description='사용자 ID', type=openapi.TYPE_INTEGER)
+    ], responses={200: UserBookListSerializer})
+    def get(self, request):
+        user_id = request.query_params.get('user_id')
+        if user_id is not None:
+            books = Book.objects.filter(user_id=user_id)
+            response_serializer = UserBookListSerializer(books, many=True)
+            return Response({
+                'result': response_serializer.data
+            }, status.HTTP_200_OK)
+        return Response(status.HTTP_400_BAD_REQUEST)
+
 class ChoiceContent(APIView):
     @swagger_auto_schema(request_body=ContentSerializer,
                          responses={200: ContentChoiceSerializer})
@@ -43,3 +58,4 @@ class ChoiceContent(APIView):
             'message': '뭔가 문제 있음',
             'result': serializer.errors
         }, status.HTTP_400_BAD_REQUEST)
+
