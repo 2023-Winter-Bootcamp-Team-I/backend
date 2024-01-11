@@ -13,4 +13,11 @@ class Book(models.Model):
     age = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
-    is_deleted = models.BooleanField(default=False)  # 확인바랍니다
+    is_deleted = models.DateTimeField(default=None, null=True)
+
+    def update_date(self):
+        self.updated_at = timezone.now()
+        self.save()
+
+    class Meta:
+        db_table = 'book'
