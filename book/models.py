@@ -1,3 +1,5 @@
+from datetime import timezone
+
 from django.db import models
 from user.models import User
 
@@ -15,5 +17,9 @@ class Book(models.Model):
     updated_at = models.DateTimeField(auto_now=True, null=True)
     is_deleted = models.DateTimeField(default=None, null=True)
 
-    class Meta:
+    def update_date(self):
+        self.updated_at = timezone.now()
+        self.save()
+        
+     class Meta:
         db_table = 'book'
