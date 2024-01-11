@@ -21,5 +21,5 @@ class Book(models.Model):
         self.updated_at = timezone.now()
         self.save()
         
-     class Meta:
+    class Meta:
         db_table = 'book'
