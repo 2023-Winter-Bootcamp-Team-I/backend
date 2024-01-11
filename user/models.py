@@ -1,3 +1,5 @@
+from datetime import timezone
+
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.auth.models import BaseUserManager
@@ -55,4 +57,12 @@ class User(models.Model):
     name = models.CharField(max_length=20)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
-    is_deleted = models.BooleanField(default=False)  # 확인바랍니다
+
+    is_deleted = models.BooleanField(default=False)
+
+    def update_date(self):
+        self.updated_at = timezone.now()
+        self.save()
+        
+    class Meta:
+        db_table = 'user'
