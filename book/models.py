@@ -22,4 +22,5 @@ class Book(models.Model):
         self.save()
         
     class Meta:
+        feat/#41
         db_table = 'book'
