@@ -55,11 +55,4 @@ class User(models.Model):
     name = models.CharField(max_length=20)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
-    is_deleted = models.BooleanField(default=False)
-
-    def update_date(self):
-        self.updated_at = timezone.now()
-        self.save()
-
-    class Meta:
-        db_table = 'user'
+    is_deleted = models.BooleanField(default=False)  # 확인바랍니다
