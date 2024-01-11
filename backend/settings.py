@@ -57,7 +57,12 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+STATIC_URL = '/static/'
+#실제 경로 아닌 파일이 접근 할 수 있게 url 주기 위한 기본적인 베이스
+
 ROOT_URLCONF = 'backend.urls'
+
+
 
 TEMPLATES = [
     {
