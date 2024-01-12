@@ -7,7 +7,7 @@ from page.models import Page
 
 class WritePage(WebsocketConsumer):
 
-    #소켓 통신 연결
+# ----------------------------------------------------------------------- 소켓 통신 연결
     def connect(self):
         self.accept()
         #책-페이지 저장 리스트 아래 작성
@@ -16,7 +16,8 @@ class WritePage(WebsocketConsumer):
         self.book_content_ko = []
         self.book_content_en = []
 
-    # 소켓 통신 연결 해제
+
+# ---------------------------------------------------------------------- 소켓 통신 연결 해제
     def disconnect(self, closed_code):
         # 만약에 중간에 끊킨 경우, book_id와 관련된 것 전부 삭제
         book_object = Page.objects.get(id=self.book_id)
@@ -37,7 +38,8 @@ class WritePage(WebsocketConsumer):
                 Page.objects.filter(book_id=self.book_id).delete()
         pass
 
-    # 소켓 통신 (메세지)
+
+# --------------------------------------------------------------------- 소켓 통신 (메세지)
     def receive(self, text_data):
 
         text_data_json = json.loads(text_data) #data를 받음
@@ -79,41 +81,13 @@ class WritePage(WebsocketConsumer):
 
             self.save_story_to_db(page_cnt, ko_content, en_content)
 
-            image_uuid = self.generate_dalle_image(en_content)
+            image_uuid = self.generate_dalle_image(en_content) # 비동기 함수 ??
+
+
 
 ######################## 함수들 ########################
-    def generate_start_gpt_responses(self, user_info):
-        # 지피티씨 호출해서 만들고 반환하기. -> 이 정보들로 이야기 만들어줘 두가지로 6번만 선택할거야 어쩌구 저쩌구
-        self.conversation = [
-            {
-                "role": "system",
-                "content": "당신은 어린이 동화 작가입니다. 어떤 리액션도 하지마세요. 사용자가 원하는 것에 대해 양식에 맞춰서 글만 써주세요."
-            },
-            {
-                "role": "user",
-                "content": f"{user_info.username} {user_info.gender} {user_info.age} {user_info.lan} {user_info.fairytale} 이 요소들로 동화 써줘~"
-            }
-        ]
 
-    def generate_ing_gpt_responses(self, choice):
-        # 지피티씨 호출해서 만들고 반환하기. -> 내가 선택한 이야기로 진행해주고 계속 이어서 두가지로 해줘
-        self.conversation = [
-            {
-                "role": "system",
-                "content": choice + '이 요소로 프롬프트 생성'
-            },
-        ]
-
-    def generate_end_gpt_responses(self, choice):
-        # 지피티씨 호출해서 만들고 반환하기. -> 내가 선택한 이야기로 이야기 마무리 엔딩 내줘
-        self.conversation = [
-            {
-                "role": "system",
-                "content": choice + '이 요소로 프롬프트 생성하는데 이제 여기서 고른 문장으로 마무리 엔딩 내달라고 하기'
-            },
-        ]
-
-
+# --------------------------------------------------------------------- 이야기 만들 때 필요한 함수들
     def extract_user_info(self, data):
         user_info = {
             'username': data.get('username'),
@@ -124,18 +98,57 @@ class WritePage(WebsocketConsumer):
         }
         return user_info
 
+    def generate_start_gpt_responses(self, user_info):
+        # 지피티씨 호출해서 만들고 반환하기. -> 이 정보들로 이야기 만들어줘 두가지로 6번만 선택할거야 어쩌구 저쩌구
+        self.conversation = [
+            {
+                "role": "system",
+                "content": "당신은 글쓰기가 유창한 어린이 동화 작가입니다. 당신은 각색 또한 잘하는 동화 작가입니다. 당신은 한국어와 영어 모두 능통합니다. 어떤 리액션도 하지마세요. 사용자가 원하는 것에 대해 양식에 맞춰서 글만 써주세요. 20대 여성처럼 친근하게 적어주세요."
+            },
+            {
+                "role": "user",
+                "content": f"{user_info.fairytale}를 각색해서 {user_info.username}가 주인공인 동화를 써주세요. "
+                           f"동화 시작부터 서로 다른 이야기의 내용 2가지를 제시해 주세요. "
+                           f"답변에 따라 이야기가 바뀝니다. "
+                           f"제가 선택을 하기 전까지 기다려 주세요. "
+                           f"선택을 하면, 이야기를 계속 이어나가 주세요. "
+                           f"이 단계를 반복하며, 6번의 전환 후에 이야기를 마무리합니다. "
+                           f"지금 쓰려는 동화의 대상 독자의 성별은 {user_info.gender}, 연령은 {user_info.age} 입니다. "
+                           f"언어는 {user_info.lan}로 먼저 써주세요. "
+                           f"먼저 써준 내용이 한국어라면 다음으로 영어로도 써주고, 영어라면 다음으로 한국어로도 써주세요."
+                           f"(20초 이내로)"
+            }
+        ]
 
+    def generate_ing_gpt_responses(self, choice):
+        # 지피티씨 호출해서 만들고 반환하기. -> 내가 선택한 이야기로 진행해주고 계속 이어서 두가지로 해줘
+        self.conversation = [
+            {
+                "role": "system",
+                "content": f"{choice}번을 고르겠습니다. {choice}번의 이야기에 이어지는 이야기를 이전에 당신의 응답과 같이 제시해주세요(20초 이내로)"
+            },
+        ]
+
+    def generate_end_gpt_responses(self, choice):
+        # 지피티씨 호출해서 만들고 반환하기. -> 내가 선택한 이야기로 이야기 마무리 엔딩 내줘
+        self.conversation = [
+            {
+                "role": "system",
+                "content": f"{choice}번의 내용으로 동화 내용 마무리 엔딩 지어주세요.(20초 이내로)"
+            },
+        ]
+
+
+# -------------------------------------------------------------------- db 넣는 함수들
     def save_story_to_db(self, page_cnt, ko_content, en_content):
         Page.objects.create(page_cnt=page_cnt, ko_content=ko_content, en_content=en_content)
-
-
     def generate_dalle_image(self, en_content):
         print("달리야 해줘")
         # 달리 호출해서 만들고 반환 -> 이 내용에 적절한 그림을 그려줘
         # save_story_to_db 함수랑 합쳐야 하는 것 같은데 맞나 en_content 이용해서 image_url 받으면 db에 넣으면 되자나
 
 
-    # 응답을 클라이언트한테 전송함.
+# -------------------------------------------------------------------- 응답을 클라이언트한테 전송하는 함수
     def send_response_to_client(self, responses, page_cnt):
         # GPT-3 스트리밍 API 호출
         for response in openai.ChatCompletion.create(
