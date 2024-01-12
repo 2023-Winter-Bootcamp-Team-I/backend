@@ -1,12 +1,13 @@
 import json
-
+import boto3
 import openai
+import requests
+from botocore.exceptions import NoCredentialsError
 from channels.generic.websocket import WebsocketConsumer
 from page.models import Page
 
 
 class WritePage(WebsocketConsumer):
-
 # ----------------------------------------------------------------------- 소켓 통신 연결
     def connect(self):
         self.accept()
@@ -65,7 +66,7 @@ class WritePage(WebsocketConsumer):
 
             # 6번째 페이지 처리
             if page_cnt == 6:
-                responses = self.generate_end_gpt_responses(choice) # 끝
+                responses = self.generate_last_ing_gpt_responses(choice) # 끝
                 page_cnt += 1
                 self.send_response_to_client(responses, page_cnt)
 
@@ -99,26 +100,49 @@ class WritePage(WebsocketConsumer):
         return user_info
 
     def generate_start_gpt_responses(self, user_info):
-        # 지피티씨 호출해서 만들고 반환하기. -> 이 정보들로 이야기 만들어줘 두가지로 6번만 선택할거야 어쩌구 저쩌구
-        self.conversation = [
-            {
-                "role": "system",
-                "content": "당신은 글쓰기가 유창한 어린이 동화 작가입니다. 당신은 각색 또한 잘하는 동화 작가입니다. 당신은 한국어와 영어 모두 능통합니다. 어떤 리액션도 하지마세요. 사용자가 원하는 것에 대해 양식에 맞춰서 글만 써주세요. 20대 여성처럼 친근하게 적어주세요."
-            },
-            {
-                "role": "user",
-                "content": f"{user_info.fairytale}를 각색해서 {user_info.username}가 주인공인 동화를 써주세요. "
-                           f"동화 시작부터 서로 다른 이야기의 내용 2가지를 제시해 주세요. "
-                           f"답변에 따라 이야기가 바뀝니다. "
-                           f"제가 선택을 하기 전까지 기다려 주세요. "
-                           f"선택을 하면, 이야기를 계속 이어나가 주세요. "
-                           f"이 단계를 반복하며, 6번의 전환 후에 이야기를 마무리합니다. "
-                           f"지금 쓰려는 동화의 대상 독자의 성별은 {user_info.gender}, 연령은 {user_info.age} 입니다. "
-                           f"언어는 {user_info.lan}로 먼저 써주세요. "
-                           f"먼저 써준 내용이 한국어라면 다음으로 영어로도 써주고, 영어라면 다음으로 한국어로도 써주세요."
-                           f"(20초 이내로)"
-            }
-        ]
+
+        if user_info.lan == 'ko':
+            self.conversation = [
+                {
+                    "role": "system",
+                    "content": "당신은 글쓰기가 유창한 어린이 동화 작가입니다. 당신은 각색 또한 잘하는 동화 작가입니다. 당신은 한국어와 영어 모두 능통합니다. 어떤 리액션도 하지마세요. 사용자가 원하는 것에 대해 양식에 맞춰서 글만 써주세요. 20대 여성처럼 친근하게 적어주세요."
+                },
+                {
+                    "role": "user",
+                    "content": f"{user_info.fairytale}를 각색해서 {user_info.username}가 주인공인 동화를 써주세요. "
+                               f"동화 시작부터 서로 다른 이야기의 내용 2가지를 제시해 주세요. "
+                               f"답변에 따라 이야기가 바뀝니다. "
+                               f"제가 선택을 하기 전까지 기다려 주세요. "
+                               f"선택을 하면, 이야기를 계속 이어나가 주세요. "
+                               f"이 단계를 반복하며, 6번의 전환 후에 이야기를 마무리합니다. "
+                               f"지금 쓰려는 동화의 대상 독자의 성별은 {user_info.gender}, 연령은 {user_info.age} 입니다. "
+                               f"언어는 한국어로 먼저 써주세요. "
+                               f"먼저 써준 내용이 한국어라면 다음으로 영어로도 써주세요."
+                               f"(20초 이내로)"
+                }
+            ]
+
+        elif user_info.language == "en":
+            self.conversation = [
+                {
+                    "role": "system",
+                    "content": "당신은 글쓰기가 유창한 어린이 동화 작가입니다. 당신은 각색 또한 잘하는 동화 작가입니다. 당신은 한국어와 영어 모두 능통합니다. 어떤 리액션도 하지마세요. 사용자가 원하는 것에 대해 양식에 맞춰서 글만 써주세요. 20대 여성처럼 친근하게 적어주세요."
+                },
+                {
+                    "role": "user",
+                    "content": f"{user_info.fairytale}를 각색해서 {user_info.username}가 주인공인 동화를 써주세요. "
+                               f"동화 시작부터 서로 다른 이야기의 내용 2가지를 제시해 주세요. "
+                               f"답변에 따라 이야기가 바뀝니다. "
+                               f"제가 선택을 하기 전까지 기다려 주세요. "
+                               f"선택을 하면, 이야기를 계속 이어나가 주세요. "
+                               f"이 단계를 반복하며, 6번의 전환 후에 이야기를 마무리합니다. "
+                               f"지금 쓰려는 동화의 대상 독자의 성별은 {user_info.gender}, 연령은 {user_info.age} 입니다. "
+                               f"언어는 영어로 먼저 써주세요. "
+                               f"먼저 써준 내용이 영어라면 다음으로 한국어로도 써주세요."
+                               f"(20초 이내로)"
+                }
+            ]
+
 
     def generate_ing_gpt_responses(self, choice):
         # 지피티씨 호출해서 만들고 반환하기. -> 내가 선택한 이야기로 진행해주고 계속 이어서 두가지로 해줘
@@ -129,7 +153,7 @@ class WritePage(WebsocketConsumer):
             },
         ]
 
-    def generate_end_gpt_responses(self, choice):
+    def generate_last_ing_gpt_responses(self, choice):
         # 지피티씨 호출해서 만들고 반환하기. -> 내가 선택한 이야기로 이야기 마무리 엔딩 내줘
         self.conversation = [
             {
@@ -142,10 +166,46 @@ class WritePage(WebsocketConsumer):
 # -------------------------------------------------------------------- db 넣는 함수들
     def save_story_to_db(self, page_cnt, ko_content, en_content):
         Page.objects.create(page_cnt=page_cnt, ko_content=ko_content, en_content=en_content)
-    def generate_dalle_image(self, en_content):
-        print("달리야 해줘")
-        # 달리 호출해서 만들고 반환 -> 이 내용에 적절한 그림을 그려줘
-        # save_story_to_db 함수랑 합쳐야 하는 것 같은데 맞나 en_content 이용해서 image_url 받으면 db에 넣으면 되자나
+    def generate_dalle_image(self, en_content, boto3=None):
+
+        gpt_prompt = []
+        gpt_prompt.append({
+            "role": "system",
+            "content":"당신은 유능한 동화 그림 작가입니다. 말 없이 요청하는 사항에 대해서 그림만 그려주세요."
+        })
+
+        gpt_prompt.append({
+            "role":"user",
+            "content":f"{en_content}라는 내용의 그림 하나 만들어주세요."
+        })
+
+
+        response = openai.Image.create(
+            prompt=gpt_prompt,
+            n=1,
+            size="1024x1024"
+        )
+        # url 추출
+        image_url = response['data'][0]['url']
+
+        # 이미지 다운로드
+        image_data = requests.get(image_url).content
+
+        # S3 클라이언트 생성
+        s3 = boto3.client('s3')
+
+        try:
+            # S3 버킷에 이미지 업로드
+            s3.put_object(key=s3_object_name, Body=image_data)
+            return f"https://bookg-s3-bucket.s3.ap-northeast-2.amazonaws.com/{s3_object_name}" # uuid 가 들어감
+        except NoCredentialsError:
+            print("AWS credentials not available.")
+            return None
+
+
+
+
+
 
 
 # -------------------------------------------------------------------- 응답을 클라이언트한테 전송하는 함수
@@ -153,7 +213,7 @@ class WritePage(WebsocketConsumer):
         # GPT-3 스트리밍 API 호출
         for response in openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages= responses,
+            messages=responses,
             temperature=0.5,
             stream=True
         ):
