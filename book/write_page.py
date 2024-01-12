@@ -89,19 +89,20 @@ class WritePage(WebsocketConsumer):
 ######################## 함수들 ########################
 
 # --------------------------------------------------------------------- 이야기 만들 때 필요한 함수들
+# 자 이거 api 명세서에 유림님이 적어주신 카멜케이스 변수명 대로 수정 부탁드려요 (저는 하다가 말았어요~)
     def extract_user_info(self, data):
         user_info = {
-            'username': data.get('username'),
+            'userName': data.get('userName'),
             'gender': data.get('gender'),
             'age': data.get('age'),
-            'lan': data.get('lan'),
-            'fairytale': data.get('fairytale')
+            'language': data.get('language'),
+            'fairyTale': data.get('fairyTale')
         }
         return user_info
 
     def generate_start_gpt_responses(self, user_info):
 
-        if user_info.lan == 'ko':
+        if user_info.language == 'ko':  # 프론트에서.. language로 하기로 했대요..... 그리고 프롬프팅 두개다 변경 부탁 드려요!
             self.conversation = [
                 {
                     "role": "system",
@@ -109,7 +110,7 @@ class WritePage(WebsocketConsumer):
                 },
                 {
                     "role": "user",
-                    "content": f"{user_info.fairytale}를 각색해서 {user_info.username}가 주인공인 동화를 써주세요. "
+                    "content": f"{user_info.fairyTale}를 각색해서 {user_info.userName}가 주인공인 동화를 써주세요. "
                                f"동화 시작부터 서로 다른 이야기의 내용 2가지를 제시해 주세요. "
                                f"답변에 따라 이야기가 바뀝니다. "
                                f"제가 선택을 하기 전까지 기다려 주세요. "
@@ -191,6 +192,8 @@ class WritePage(WebsocketConsumer):
         # 이미지 다운로드
         image_data = requests.get(image_url).content
 
+
+        # 여기 이후는 김민지가 작업 할거에용 건들지 말아 주세용
         # S3 클라이언트 생성
         s3 = boto3.client('s3')
 
