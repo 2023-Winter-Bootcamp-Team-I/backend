@@ -2,10 +2,11 @@ from rest_framework import serializers
 from .models import User
 
 
-class UserSerializer(serializers.ModelSerializer):  # 회원가입
+# 회원가입
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['user_id', 'password', 'email', 'name',]
+        fields = ['user_id', 'email', 'password', 'name',]
 
 
 class UserLoginSerializer(serializers.Serializer):  # 로그인

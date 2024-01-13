@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
@@ -7,11 +7,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from book.models import Book
-from book.serializers import BookSerializer, BookCreateSerializer, ContentSerializer, ContentChoiceSerializer, \
-    UserBookListSerializer, UserBookSerializer
+from book.serializers import BookSerializer, BookCreateSerializer, ContentSerializer, ContentChoiceSerializer,TitleCreateSerializer,UserBookListSerializer, UserBookSerializer
 
 
-#동화책 초기 정보 불러오기
+
+# 동화책 초기 정보 불러오기
 class BaseBook(APIView):
     @swagger_auto_schema(request_body=BookSerializer,
                          responses={201: BookCreateSerializer})
@@ -29,6 +29,7 @@ class BaseBook(APIView):
             'result': serializer.errors
         }, status.HTTP_400_BAD_REQUEST)
 
+
     @swagger_auto_schema(manual_parameters=[
         openapi.Parameter('user_id', openapi.IN_QUERY, description='사용자 ID', type=openapi.TYPE_INTEGER)
     ], responses={200: UserBookListSerializer})
@@ -41,6 +42,7 @@ class BaseBook(APIView):
                 'result': response_serializer.data
             }, status.HTTP_200_OK)
         return Response(status.HTTP_400_BAD_REQUEST)
+
 
 class ChoiceContent(APIView):
     @swagger_auto_schema(request_body=ContentSerializer,
@@ -58,4 +60,35 @@ class ChoiceContent(APIView):
             'message': '뭔가 문제 있음',
             'result': serializer.errors
         }, status.HTTP_400_BAD_REQUEST)
+
+
+# 책 제목을 생성한다
+class TitleCreateTitle(APIView):
+    @swagger_auto_schema(request_body=TitleCreateSerializer,
+                         responses={200: TitleCreateSerializer})
+    def put(self, request, pk, *args, **kwargs):
+        book = get_object_or_404(Book, pk=pk)
+        serializer = TitleCreateSerializer(book, data=request.data)
+
+        if serializer.is_valid():
+            #  serializer.validated_data['user_id'] = request.user.id
+            book = serializer.save()
+            return Response({
+                'message': '책 제목 생성 성공',
+                'result': {
+                    'book_id': book.book_id,
+                    'book_title': serializer.data['title']
+                }
+            }, status=status.HTTP_200_OK)
+        return Response({
+            'message': '책 제목 생성 실패',
+            'result': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+'''
+동화책 글+그림 정보 불러오는거 만들다 만거어어엉
+class CallTextImage(APIView):
+    @swagger_auto_schema()
+'''
 
