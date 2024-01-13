@@ -39,8 +39,3 @@ class CallTextImageSerializer(serializers.ModelSerializer):
         fields = ['book_id']
 '''
 
-
-class DeleteBookSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Book
-        fields = ['book_id']
