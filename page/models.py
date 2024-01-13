@@ -12,8 +12,7 @@ class Page(models.Model):
     page_num = models.IntegerField()
     ko_content = models.TextField(max_length=500)
     en_content = models.TextField(max_length=500)
-
-    image_url = models.ImageField(upload_to="", max_length=500)
+    image_url = models.ImageField(upload_to="", max_length=500, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
     is_deleted = models.DateTimeField(default=None, null=True)
