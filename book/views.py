@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 
 from book.models import Book
 from book.serializers import BookSerializer, BookCreateSerializer, ContentSerializer, ContentChoiceSerializer, \
-    TitleCreateSerializer
+    TitleCreateSerializer, DeleteBookSerializer
 
 
 # 동화책 초기 정보 불러오기
@@ -71,6 +71,7 @@ class TitleCreateTitle(APIView):
             'result': serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
 
+
 '''
 class TitleCreateTitle(APIView):
     @swagger_auto_schema(request_body=TitleCreateSerializer,
@@ -95,3 +96,25 @@ class TitleCreateTitle(APIView):
             'result': serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
 '''
+'''
+동화책 글+그림 정보 불러오는거 만들다 만거어어엉
+class CallTextImage(APIView):
+    @swagger_auto_schema()
+'''
+
+
+# 동화책 삭제하기 api
+class DeleteBook(APIView):
+    @swagger_auto_schema(request_body=DeleteBookSerializer)
+    def delete(self, request, pk):
+        serializer = DeleteBookSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        book_id = serializer.validated_data['book_id']
+
+        book = get_object_or_404(Book, pk=book_id)
+        book.delete()
+
+        return Response({
+            'message': '삭제 완료'
+        }, status=status.HTTP_200_OK)

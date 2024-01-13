@@ -31,3 +31,16 @@ class TitleCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
         fields = ['book_id', 'title']
+
+'''
+동화책 글+그림 정보 불러오는거 만들다 만거어어엉
+class CallTextImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = ['book_id']
+'''
+
+
+class DeleteBookSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Book
+        fields = ['book_id']
