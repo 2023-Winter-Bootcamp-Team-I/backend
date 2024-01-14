@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 
 from book.models import Book
 from book.serializers import BookSerializer, BookCreateSerializer, ContentSerializer, ContentChoiceSerializer, \
-    UserBookListSerializer, UserBookSerializer
+    UserBookListSerializer
 
 
 #동화책 초기 정보 불러오기

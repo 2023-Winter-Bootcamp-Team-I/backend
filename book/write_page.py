@@ -149,7 +149,7 @@ class WritePage(WebsocketConsumer):
         # 지피티씨 호출해서 만들고 반환하기. -> 내가 선택한 이야기로 진행해주고 계속 이어서 두가지로 해줘
         self.conversation = [
             {
-                "role": "system",
+                "role": "user",
                 "content": f"{choice}번을 고르겠습니다. {choice}번의 이야기에 이어지는 이야기를 이전에 당신의 응답과 같이 제시해주세요(20초 이내로)"
             },
         ]
@@ -158,7 +158,7 @@ class WritePage(WebsocketConsumer):
         # 지피티씨 호출해서 만들고 반환하기. -> 내가 선택한 이야기로 이야기 마무리 엔딩 내줘
         self.conversation = [
             {
-                "role": "system",
+                "role": "user",
                 "content": f"{choice}번의 내용으로 동화 내용 마무리 엔딩 지어주세요.(20초 이내로)"
             },
         ]
@@ -168,21 +168,14 @@ class WritePage(WebsocketConsumer):
     def save_story_to_db(self, page_cnt, ko_content, en_content):
         Page.objects.create(page_cnt=page_cnt, ko_content=ko_content, en_content=en_content)
     def generate_dalle_image(self, en_content, boto3=None):
-
-        gpt_prompt = []
-        gpt_prompt.append({
-            "role": "system",
-            "content":"당신은 유능한 동화 그림 작가입니다. 말 없이 요청하는 사항에 대해서 그림만 그려주세요."
-        })
-
-        gpt_prompt.append({
-            "role":"user",
-            "content":f"{en_content}라는 내용의 그림 하나 만들어주세요."
-        })
-
-
         response = openai.Image.create(
-            prompt=gpt_prompt,
+            prompt=[{
+                    "role": "system",
+                    "content": "당신은 유능한 동화 그림 작가입니다. 말 없이 요청하는 사항에 대해서 그림만 그려주세요."
+                },{
+                    "role": "user",
+                    "content": f"{en_content}라는 내용의 그림 하나 만들어주세요."
+                }],
             n=1,
             size="1024x1024"
         )
