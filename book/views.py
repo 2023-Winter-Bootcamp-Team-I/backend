@@ -6,7 +6,7 @@ from rest_framework.decorators import api_view
 from rest_framework.generics import DestroyAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from page.models import Page
 from book.models import Book
 from book.serializers import BookSerializer, BookCreateSerializer, ContentSerializer, ContentChoiceSerializer, \
     TitleCreateSerializer, UserBookListSerializer, UserBookSerializer, DeleteBookSerializer
@@ -95,15 +95,22 @@ class CallTextImage(APIView):
 
 
 # 동화책 삭제하기 api
-class DeleteBook(APIView):
-    @swagger_auto_schema(request_body=DeleteBookSerializer)
-    def delete(self, request, book_id):
-        serializer = DeleteBookSerializer(data=request.data)
-        if serializer.is_valid():
-            book_id = serializer.validated_data['book_id']
-            book = get_object_or_404(Book, book_id=book_id)
-            book.delete()
-            return Response({
-                'message': '삭제 완료'
-            }, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class DeleteBookView(APIView):
+    @swagger_auto_schema(request_body=DeleteBookSerializer, responses={200: DeleteBookSerializer})
+    def delete(self, request, book_id, *args, **kwargs):
+        # 동화책 존재 여부 확인
+        book_instance = get_object_or_404(Book, pk=book_id)
+
+        # 동화책 및 연결된 페이지 삭제 처리
+        book_instance.is_deleted = True
+        book_instance.save()
+
+        # 연결된 페이지 삭제 처리
+        pages_to_delete = Page.objects.filter(book_id=book_id, is_deleted=False)
+        for page in pages_to_delete:
+            page.is_deleted = True
+            page.save()
+
+        return Response({
+            "message": "삭제 완료"
+        }, status=status.HTTP_200_OK)
