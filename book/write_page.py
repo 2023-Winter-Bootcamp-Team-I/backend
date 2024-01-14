@@ -5,6 +5,8 @@ import requests
 from botocore.exceptions import NoCredentialsError
 from channels.generic.websocket import WebsocketConsumer
 from page.models import Page
+from backend.settings import get_secret
+import uuid
 
 
 class WritePage(WebsocketConsumer):
@@ -60,9 +62,10 @@ class WritePage(WebsocketConsumer):
             ko_content = text_data_json.get('ko_content')
             en_content = text_data_json.get('en_content')
 
-            self.save_story_to_db(page_cnt, ko_content, en_content)
+            uuid = str(uuid.uuid4()) # db에 uuid 넣은 이미지 저장
+            self.save_story_to_db(uuid, page_cnt, ko_content, en_content)
 
-            image_uuid = self.generate_dalle_image(en_content) # 비동기 함수 ??
+            image = self.generate_dalle_image(uuid,en_content) # 비동기 함수 ??
 
             # 6번째 페이지 처리
             if page_cnt == 6:
@@ -80,9 +83,10 @@ class WritePage(WebsocketConsumer):
             ko_content = text_data_json.get('ko_content')
             en_content = text_data_json.get('en_content')
 
-            self.save_story_to_db(page_cnt, ko_content, en_content)
+            uuid = str(uuid.uuid4())
+            self.save_story_to_db(uuid, page_cnt, ko_content, en_content)
 
-            image_uuid = self.generate_dalle_image(en_content) # 비동기 함수 ??
+            image = self.generate_dalle_image(uuid,en_content) # 비동기 함수 ??
 
 
 
@@ -165,9 +169,10 @@ class WritePage(WebsocketConsumer):
 
 
 # -------------------------------------------------------------------- db 넣는 함수들
-    def save_story_to_db(self, page_cnt, ko_content, en_content):
-        Page.objects.create(page_cnt=page_cnt, ko_content=ko_content, en_content=en_content)
-    def generate_dalle_image(self, en_content, boto3=None):
+    def save_story_to_db(self, uuid, page_cnt, ko_content, en_content):
+        image_url = "대충 파일 url 구성"
+        Page.objects.create(image_url=image_url, page_cnt=page_cnt, ko_content=ko_content, en_content=en_content)
+    def generate_dalle_image(self, uuid ,en_content, boto3=None):
         response = openai.Image.create(
             prompt=[{
                     "role": "system",
@@ -185,26 +190,36 @@ class WritePage(WebsocketConsumer):
         # 이미지 다운로드
         image_data = requests.get(image_url).content
 
-
-        # 여기 이후는 김민지가 작업 할거에용 건들지 말아 주세용
         # S3 클라이언트 생성
-        s3 = boto3.client('s3')
-
         try:
             # S3 버킷에 이미지 업로드
-            s3.put_object(key=s3_object_name, Body=image_data)
-            return f"https://bookg-s3-bucket.s3.ap-northeast-2.amazonaws.com/{s3_object_name}" # uuid 가 들어감
+            get_file_url(uuid,image_data)
         except NoCredentialsError:
             print("AWS credentials not available.")
             return None
 
+# 파일 S3 접근 및 업로드
+def get_file_url(uuid,file):
+    s3_client = boto3.client(
+        's3',
+        aws_access_key_id = get_secret("Access_key_ID"),
+        aws_secret_access_key = get_secret("Secret_access_key"),
+    )
+    file_key = uuid + ".jpg"
+
+    s3_client.put_object(Body=file, Bucket=get_secret("AWS_BUCKET_NAME"), Key=file_key)
+    # 업로드된 파일의 URL을 구성
+    url = get_secret("FILE_URL") + "/" + file_key
+
+    # URL 문자열에서 공백을 "_"로 대체
+    url = url.replace(" ", "_")
+
+    return url
 
 
 
 
-
-
-# -------------------------------------------------------------------- 응답을 클라이언트한테 전송하는 함수
+    # -------------------------------------------------------------------- 응답을 클라이언트한테 전송하는 함수
     def send_response_to_client(self, responses, page_cnt):
         # GPT-3 스트리밍 API 호출
         for response in openai.ChatCompletion.create(
