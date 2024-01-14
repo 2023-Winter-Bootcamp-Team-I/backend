@@ -54,3 +54,6 @@ class UserBookListSerializer(serializers.ModelSerializer):
         # 가장 최근의 페이지를 가져오고, 해당 페이지의 이미지 URL 반환
         page = Page.objects.filter(book_id=obj.book_id).order_by('-created_at').first()
         return page.image_url.url if page else None
+
+class DeleteBookSerializer(serializers.Serializer):
+    book_id = serializers.IntegerField()

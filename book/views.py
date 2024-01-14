@@ -3,12 +3,13 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import api_view
+from rest_framework.generics import DestroyAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from book.models import Book
-from book.serializers import BookSerializer, BookCreateSerializer, ContentSerializer, ContentChoiceSerializer,TitleCreateSerializer,UserBookListSerializer, UserBookSerializer
-
+from book.serializers import BookSerializer, BookCreateSerializer, ContentSerializer, ContentChoiceSerializer, \
+    TitleCreateSerializer, UserBookListSerializer, UserBookSerializer, DeleteBookSerializer
 
 
 # 동화책 초기 정보 불러오기
@@ -92,3 +93,17 @@ class CallTextImage(APIView):
     @swagger_auto_schema()
 '''
 
+
+# 동화책 삭제하기 api
+class DeleteBook(APIView):
+    @swagger_auto_schema(request_body=DeleteBookSerializer)
+    def delete(self, request, book_id):
+        serializer = DeleteBookSerializer(data=request.data)
+        if serializer.is_valid():
+            book_id = serializer.validated_data['book_id']
+            book = get_object_or_404(Book, book_id=book_id)
+            book.delete()
+            return Response({
+                'message': '삭제 완료'
+            }, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
