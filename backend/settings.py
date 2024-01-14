@@ -7,12 +7,6 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 #BASE_DIR = Path(__file__).resolve().parent.parent
 
-# ROOT_DIR = os.path.dirname(BASE_DIR)
-# # secrets.json의 경로
-# SECRETS_PATH = os.path.join(ROOT_DIR, 'secrets.json')
-# # json파일을 파이썬 객체로 변환
-# secrets = json.loads(open(SECRETS_PATH).read())
-
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 secret_file = os.path.join(BASE_DIR, 'secrets.json')
