@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from user.models import User
 from book.models import Book
 from book.serializers import BookSerializer, BookCreateSerializer, ContentSerializer, ContentChoiceSerializer,TitleCreateSerializer,UserBookListSerializer, UserBookSerializer
 
@@ -36,6 +36,8 @@ class BaseBook(APIView):
     def get(self, request):
         user_id = request.query_params.get('user_id')
         if user_id is not None:
+            #사용자가 존재 하느냐!!
+            get_object_or_404(User, pk=user_id)
             books = Book.objects.filter(user_id=user_id)
             response_serializer = UserBookListSerializer(books, many=True)
             return Response({
