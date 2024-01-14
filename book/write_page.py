@@ -131,7 +131,7 @@ class WritePage(WebsocketConsumer):
                 },
                 {
                     "role": "user",
-                    "content": f"{user_info.fairytale}를 각색해서 {user_info.username}가 주인공인 동화를 써주세요. "
+                    "content": f"{user_info.fairyTale}를 각색해서 {user_info.userName}가 주인공인 동화를 써주세요. "
                                f"동화 시작부터 서로 다른 이야기의 내용 2가지를 제시해 주세요. "
                                f"답변에 따라 이야기가 바뀝니다. "
                                f"제가 선택을 하기 전까지 기다려 주세요. "
