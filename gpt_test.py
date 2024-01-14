@@ -1,6 +1,7 @@
 import openai
+from .backend.settings import get_secret
 
-openai.api_key = "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"
+openai.api_key = get_secret("GPT_KEY")
 
 # 대화 데이터 정의
 conversation = [

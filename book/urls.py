@@ -9,7 +9,7 @@ from django.urls import re_path
 from .write_page import WritePage
 
 urlpatterns = [
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    #path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path("books/", BaseBook.as_view()),
     path("books/page/", ChoiceContent.as_view()),
     re_path(r"book/$", WritePage.as_asgi()),

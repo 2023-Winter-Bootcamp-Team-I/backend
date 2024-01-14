@@ -86,8 +86,8 @@ class WritePage(WebsocketConsumer):
             uuid = str(uuid.uuid4())
             self.save_story_to_db(uuid, page_cnt, ko_content, en_content)
 
-            image = self.generate_dalle_image(uuid,en_content) # 비동기 함수 ??
-
+            image = self.generate_dalle_image(uuid,en_content) # 리턴 값이 url임 -> 나중에 비동기
+            #print(image)
 
 
 ######################## 함수들 ########################
@@ -169,9 +169,12 @@ class WritePage(WebsocketConsumer):
 
 
 # -------------------------------------------------------------------- db 넣는 함수들
+    #db에 page 저장
     def save_story_to_db(self, uuid, page_cnt, ko_content, en_content):
-        image_url = "대충 파일 url 구성"
+        image_url = get_secret("FILE_URL") + "/" + uuid + ".jpg"
         Page.objects.create(image_url=image_url, page_cnt=page_cnt, ko_content=ko_content, en_content=en_content)
+
+    # 달리 이미지 생성
     def generate_dalle_image(self, uuid ,en_content, boto3=None):
         response = openai.Image.create(
             prompt=[{
@@ -198,25 +201,23 @@ class WritePage(WebsocketConsumer):
             print("AWS credentials not available.")
             return None
 
-# 파일 S3 접근 및 업로드
-def get_file_url(uuid,file):
-    s3_client = boto3.client(
-        's3',
-        aws_access_key_id = get_secret("Access_key_ID"),
-        aws_secret_access_key = get_secret("Secret_access_key"),
-    )
-    file_key = uuid + ".jpg"
+    # 파일 S3 접근 및 업로드
+    def get_file_url(uuid,file):
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id = get_secret("Access_key_ID"),
+            aws_secret_access_key = get_secret("Secret_access_key"),
+        )
+        file_key = uuid + ".jpg"
 
-    s3_client.put_object(Body=file, Bucket=get_secret("AWS_BUCKET_NAME"), Key=file_key)
-    # 업로드된 파일의 URL을 구성
-    url = get_secret("FILE_URL") + "/" + file_key
+        s3_client.put_object(Body=file, Bucket=get_secret("AWS_BUCKET_NAME"), Key=file_key)
+        # 업로드된 파일의 URL을 구성
+        url = get_secret("FILE_URL") + "/" + file_key
 
-    # URL 문자열에서 공백을 "_"로 대체
-    url = url.replace(" ", "_")
+        # URL 문자열에서 공백을 "_"로 대체
+        url = url.replace(" ", "_")
 
-    return url
-
-
+        return url
 
 
     # -------------------------------------------------------------------- 응답을 클라이언트한테 전송하는 함수
