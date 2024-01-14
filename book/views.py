@@ -63,7 +63,7 @@ class ChoiceContent(APIView):
         }, status.HTTP_400_BAD_REQUEST)
 
 
-# 책 제목을 생성한다
+# 책 제목을 생성
 class TitleCreateTitle(APIView):
     @swagger_auto_schema(request_body=TitleCreateSerializer,
                          responses={200: TitleCreateSerializer})
@@ -88,13 +88,43 @@ class TitleCreateTitle(APIView):
 
 
 '''
-동화책 글+그림 정보 불러오는거 만들다 만거어어엉
+# 동화책 글+그림 정보 불러오는거 만들다 만거어어엉
 class CallTextImage(APIView):
-    @swagger_auto_schema()
+    @swagger_auto_schema(request_body=CallTextImageSerializer,
+                         responses={200:CallTextImageSerializer})
+    def get(self, request, pk, *args, **kwargs):
 '''
 
 
-# 동화책 삭제하기 api
+# 동화책 삭제
+class DeleteBookView(APIView):
+    @swagger_auto_schema(request_body=DeleteBookSerializer,
+                         responses={200: DeleteBookSerializer})
+    def delete(self, request, book_id, *args, **kwargs):
+        # 동화책 있니 없니
+        book_instance = get_object_or_404(Book, pk=book_id)
+
+        book_instance.delete()
+
+        return Response({
+            "message": "삭제 완료"
+        }, status=status.HTTP_200_OK)
+
+
+'''
+class DeleteBookView(APIView):
+    @swagger_auto_schema(request_body=DeleteBookSerializer,
+                         responses={200: DeleteBookSerializer})
+    def delete(self, request, pk, *args, **kwargs):
+        # 동화책 있니 없니
+        book_instance = Book.objects.get(id=pk)
+        if book_instance == 'POST':
+            book_instance.delete()
+        return Response({
+            "message": "삭제 완료"
+        }, status=status.HTTP_200_OK)
+'''
+'''
 class DeleteBookView(APIView):
     @swagger_auto_schema(request_body=DeleteBookSerializer, responses={200: DeleteBookSerializer})
     def delete(self, request, book_id, *args, **kwargs):
@@ -114,3 +144,5 @@ class DeleteBookView(APIView):
         return Response({
             "message": "삭제 완료"
         }, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+'''
