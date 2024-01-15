@@ -34,9 +34,9 @@ class WritePage(WebsocketConsumer):
         for pages in pages:
             try:
                 # 해당 페이지의 한국어 내용과 영어 내용을 가져와 출력
-                ko_content = pages.ko_content
-                en_content = pages.en_content
-                print(ko_content, en_content)
+                koContent = pages.koContent
+                enContent = pages.enContent
+                print(koContent, enContent)
             except:
                 Page.objects.filter(book_id=self.book_id).delete()
         pass
@@ -46,47 +46,47 @@ class WritePage(WebsocketConsumer):
     def receive(self, text_data):
 
         text_data_json = json.loads(text_data) #data를 받음
-        page_cnt = text_data_json.get('page_cnt')
+        pageCnt = text_data_json.get('pageCnt')
 
         if text_data_json['type'] == 'start':
             user_info = self.extract_user_info(text_data_json)
             responses = self.generate_start_gpt_responses(user_info) # 시작
             # 페이지 번호 증가 및 응답 반환
-            page_cnt += 1
-            self.send_response_to_client(responses, page_cnt)
+            pageCnt += 1
+            self.send_response_to_client(responses, pageCnt)
 
         elif text_data_json['type'] == 'ing':
             # 책 내용 가져온거 처리하기
             choice = text_data_json.get('choice')
 
-            ko_content = text_data_json.get('ko_content')
-            en_content = text_data_json.get('en_content')
+            koContent = text_data_json.get('koContent')
+            enContent = text_data_json.get('enContent')
 
             uuid = str(uuid.uuid4()) # db에 uuid 넣은 이미지 저장
-            self.save_story_to_db(uuid, page_cnt, ko_content, en_content)
+            self.save_story_to_db(uuid, pageCnt, koContent, enContent)
 
-            image = self.generate_dalle_image(uuid,en_content) # 비동기 함수 ??
+            image = self.generate_dalle_image(uuid,enContent) # 비동기 함수 ??
 
             # 6번째 페이지 처리
-            if page_cnt == 6:
+            if pageCnt == 6:
                 responses = self.generate_last_ing_gpt_responses(choice) # 끝
-                page_cnt += 1
-                self.send_response_to_client(responses, page_cnt)
+                pageCnt += 1
+                self.send_response_to_client(responses, pageCnt)
 
             else: # 2~5번 페이지 처리
                 responses = self.generate_ing_gpt_responses(choice) # 중간
-                page_cnt += 1
-                self.send_response_to_client(responses, page_cnt)
+                pageCnt += 1
+                self.send_response_to_client(responses, pageCnt)
 
         elif text_data_json['type'] == 'end': # 마지막 선택 처리
 
-            ko_content = text_data_json.get('ko_content')
-            en_content = text_data_json.get('en_content')
+            koContent = text_data_json.get('koContent')
+            enContent = text_data_json.get('enContent')
 
             uuid = str(uuid.uuid4())
-            self.save_story_to_db(uuid, page_cnt, ko_content, en_content)
+            self.save_story_to_db(uuid, pageCnt, koContent, enContent)
 
-            image = self.generate_dalle_image(uuid,en_content) # 리턴 값이 url임 -> 나중에 비동기
+            image = self.generate_dalle_image(uuid,enContent) # 리턴 값이 url임 -> 나중에 비동기
             #print(image)
 
 
@@ -170,28 +170,28 @@ class WritePage(WebsocketConsumer):
 
 # -------------------------------------------------------------------- db 넣는 함수들
     #db에 page 저장
-    def save_story_to_db(self, uuid, page_cnt, ko_content, en_content):
-        image_url = get_secret("FILE_URL") + "/" + uuid + ".jpg"
-        Page.objects.create(image_url=image_url, page_cnt=page_cnt, ko_content=ko_content, en_content=en_content)
+    def save_story_to_db(self, uuid, pageCnt, koContent, enContent):
+        imageUrl = get_secret("FILE_URL") + "/" + uuid + ".jpg"
+        Page.objects.create(imageUrl=imageUrl, pageCnt=pageCnt, koContent=koContent, enContent=enContent)
 
     # 달리 이미지 생성
-    def generate_dalle_image(self, uuid ,en_content, boto3=None):
+    def generate_dalle_image(self, uuid ,enContent, boto3=None):
         response = openai.Image.create(
             prompt=[{
                     "role": "system",
                     "content": "당신은 유능한 동화 그림 작가입니다. 말 없이 요청하는 사항에 대해서 그림만 그려주세요."
                 },{
                     "role": "user",
-                    "content": f"{en_content}라는 내용의 그림 하나 만들어주세요."
+                    "content": f"{enContent}라는 내용의 그림 하나 만들어주세요."
                 }],
             n=1,
             size="1024x1024"
         )
         # url 추출
-        image_url = response['data'][0]['url']
+        imageUrl = response['data'][0]['url']
 
         # 이미지 다운로드
-        image_data = requests.get(image_url).content
+        image_data = requests.get(imageUrl).content
 
         # S3 클라이언트 생성
         try:
@@ -221,7 +221,7 @@ class WritePage(WebsocketConsumer):
 
 
     # -------------------------------------------------------------------- 응답을 클라이언트한테 전송하는 함수
-    def send_response_to_client(self, responses, page_cnt):
+    def send_response_to_client(self, responses, pageCnt):
         # GPT-3 스트리밍 API 호출
         for response in openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
