@@ -10,7 +10,6 @@ from book.models import Book
 from book.serializers import BookSerializer, BookCreateSerializer, ContentSerializer, ContentChoiceSerializer,TitleCreateSerializer,UserBookListSerializer, UserBookSerializer
 
 
-
 # 동화책 초기 정보 불러오기
 class BaseBook(APIView):
     @swagger_auto_schema(request_body=BookSerializer,
@@ -28,7 +27,6 @@ class BaseBook(APIView):
             'message': '유효하지 않은 입력값',
             'result': serializer.errors
         }, status.HTTP_400_BAD_REQUEST)
-
 
     @swagger_auto_schema(manual_parameters=[
         openapi.Parameter('user_id', openapi.IN_QUERY, description='사용자 ID', type=openapi.TYPE_INTEGER)
