@@ -106,7 +106,7 @@ class WritePage(WebsocketConsumer):
 
     def generate_start_gpt_responses(self, user_info):
 
-        if user_info.language == 'ko':  # 프론트에서.. language로 하기로 했대요..... 그리고 프롬프팅 두개다 변경 부탁 드려요!
+        if user_info['language'] == 'ko':  # 프론트에서.. language로 하기로 했대요..... 그리고 프롬프팅 두개다 변경 부탁 드려요!
             self.conversation = [
                 {
                     "role": "system",
@@ -114,20 +114,20 @@ class WritePage(WebsocketConsumer):
                 },
                 {
                     "role": "user",
-                    "content": f"{user_info.fairyTale}를 각색해서 {user_info.userName}가 주인공인 동화를 써주세요. "
+                    "content": f"{user_info['fairyTale']}를 각색해서 {user_info['userName']}가 주인공인 동화를 써주세요. "
                                f"동화 시작부터 서로 다른 이야기의 내용 2가지를 제시해 주세요. "
                                f"답변에 따라 이야기가 바뀝니다. "
                                f"제가 선택을 하기 전까지 기다려 주세요. "
                                f"선택을 하면, 이야기를 계속 이어나가 주세요. "
                                f"이 단계를 반복하며, 6번의 전환 후에 이야기를 마무리합니다. "
-                               f"지금 쓰려는 동화의 대상 독자의 성별은 {user_info.gender}, 연령은 {user_info.age} 입니다. "
+                               f"지금 쓰려는 동화의 대상 독자의 성별은 {user_info['gender']}, 연령은 {user_info['age']} 입니다. "
                                f"언어는 한국어로 먼저 써주세요. "
                                f"먼저 써준 내용이 한국어라면 다음으로 영어로도 써주세요."
                                f"(20초 이내로)"
                 }
             ]
 
-        elif user_info.language == "en":
+        elif user_info['language'] == "en":
             self.conversation = [
                 {
                     "role": "system",
@@ -135,15 +135,15 @@ class WritePage(WebsocketConsumer):
                 },
                 {
                     "role": "user",
-                    "content": f"{user_info.fairyTale}를 각색해서 {user_info.userName}가 주인공인 동화를 써주세요. "
+                    "content": f"{user_info['fairyTale']}를 각색해서 {user_info['userName']}가 주인공인 동화를 써주세요. "
                                f"동화 시작부터 서로 다른 이야기의 내용 2가지를 제시해 주세요. "
                                f"답변에 따라 이야기가 바뀝니다. "
                                f"제가 선택을 하기 전까지 기다려 주세요. "
                                f"선택을 하면, 이야기를 계속 이어나가 주세요. "
                                f"이 단계를 반복하며, 6번의 전환 후에 이야기를 마무리합니다. "
-                               f"지금 쓰려는 동화의 대상 독자의 성별은 {user_info.gender}, 연령은 {user_info.age} 입니다. "
+                               f"지금 쓰려는 동화의 대상 독자의 성별은 {user_info['gender']}, 연령은 {user_info['age']} 입니다. "
                                f"언어는 영어로 먼저 써주세요. "
-                               f"먼저 써준 내용이 영어라면 다음으로 한국어로도 써주세요."
+                               f"먼저 써준 내용이 영어라면 다음으로 한국어로도 써주세요.
                                f"(20초 이내로)"
                 }
             ]
