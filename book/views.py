@@ -108,7 +108,7 @@ class TitleCreateTitle(APIView):
             }, status=status.HTTP_404_NOT_FOUND)
 
 '''
-# 동화책 글+그림 정보 불러오는거 만들다 만거어어엉
+# 동화책 글+그림 정보 불러오는거 만들다 만거입니다. 추후에 삭제하겠습니다.
 class CallTextImage(APIView):
     @swagger_auto_schema(request_body=CallTextImageSerializer,
                          responses={200:CallTextImageSerializer})

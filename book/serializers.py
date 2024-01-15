@@ -55,12 +55,14 @@ class UserBookListSerializer(serializers.ModelSerializer):
 
 class DeleteBookSerializer(serializers.Serializer):
     book_id = serializers
+
     class Meta:
         model = Book
         fields = ['book_id']
 
 
 '''
+추후에 삭제하겠습니다!
 class CallTextImageSerializer(serializers.Serializer):
     book_id = serializers.IntegerField()
 '''
