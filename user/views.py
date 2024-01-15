@@ -40,13 +40,13 @@ def login_view(request):
         return Response({
             "message": "유저 등록이 안돼있음.",
             "result": None
-        }, status=HTTP_400_BAD_REQUEST)
+        }, status=status.HTTP_400_BAD_REQUEST)
 
     if user.password != password:
         return Response({
             "message": "비밀번호 오류.",
             "result": None
-        }, status=HTTP_400_BAD_REQUEST)
+        }, status=status.HTTP_400_BAD_REQUEST)
 
     if serializer.is_valid():
         return Response({

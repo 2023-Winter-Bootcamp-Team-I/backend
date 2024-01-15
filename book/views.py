@@ -9,10 +9,11 @@ from rest_framework.generics import DestroyAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from page.models import Page
+from user.models import User
+
 from book.models import Book
 from book.serializers import BookSerializer, BookCreateSerializer, ContentSerializer, ContentChoiceSerializer, \
     TitleCreateSerializer, UserBookListSerializer, UserBookSerializer, DeleteBookSerializer
-
 
 # 동화책 초기 정보 불러오기
 class BaseBook(APIView):
@@ -32,13 +33,14 @@ class BaseBook(APIView):
             'result': serializer.errors
         }, status.HTTP_400_BAD_REQUEST)
 
-
     @swagger_auto_schema(manual_parameters=[
         openapi.Parameter('user_id', openapi.IN_QUERY, description='사용자 ID', type=openapi.TYPE_INTEGER)
     ], responses={200: UserBookListSerializer})
     def get(self, request):
         user_id = request.query_params.get('user_id')
         if user_id is not None:
+            #사용자가 존재 하느냐!!
+            get_object_or_404(User, pk=user_id)
             books = Book.objects.filter(user_id=user_id)
             response_serializer = UserBookListSerializer(books, many=True)
             return Response({
