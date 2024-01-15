@@ -54,7 +54,10 @@ class UserBookListSerializer(serializers.ModelSerializer):
 
 
 class DeleteBookSerializer(serializers.Serializer):
-    book_id = serializers.IntegerField()
+    book_id = serializers
+    class Meta:
+        model = Book
+        fields = ['book_id']
 
 
 '''

@@ -1,3 +1,5 @@
+from django.http import Http404
+from datetime import datetime
 from django.shortcuts import render, get_object_or_404
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -63,8 +65,8 @@ class ChoiceContent(APIView):
         }, status.HTTP_400_BAD_REQUEST)
 
 
-# 책 제목을 생성
 class TitleCreateTitle(APIView):
+    # 동화책 이름 생성
     @swagger_auto_schema(request_body=TitleCreateSerializer,
                          responses={200: TitleCreateSerializer})
     def put(self, request, pk, *args, **kwargs):
@@ -86,6 +88,24 @@ class TitleCreateTitle(APIView):
             'result': serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
 
+    # 동화책 삭제
+    @swagger_auto_schema(responses={200: DeleteBookSerializer})
+    def delete(self, request, pk, *args, **kwargs):
+        try:
+            # 동화책 있니 없니
+            book_instance = get_object_or_404(Book, pk=pk)
+
+            # is_deleted 필드를 현재시간으로 설정 + 삭제
+            book_instance.is_deleted = datetime.now()
+            book_instance.save()
+
+            return Response({
+                "message": "삭제 완료"
+            }, status=status.HTTP_200_OK)
+        except Http404:
+            return Response({
+                "message": "동화책이 존재하지 않습니다."
+            }, status=status.HTTP_404_NOT_FOUND)
 
 '''
 # 동화책 글+그림 정보 불러오는거 만들다 만거어어엉
@@ -93,56 +113,4 @@ class CallTextImage(APIView):
     @swagger_auto_schema(request_body=CallTextImageSerializer,
                          responses={200:CallTextImageSerializer})
     def get(self, request, pk, *args, **kwargs):
-'''
-
-
-# 동화책 삭제
-class DeleteBookView(APIView):
-    @swagger_auto_schema(request_body=DeleteBookSerializer,
-                         responses={200: DeleteBookSerializer})
-    def delete(self, request, book_id, *args, **kwargs):
-        # 동화책 있니 없니
-        book_instance = get_object_or_404(Book, pk=book_id)
-
-        book_instance.delete()
-
-        return Response({
-            "message": "삭제 완료"
-        }, status=status.HTTP_200_OK)
-
-
-'''
-class DeleteBookView(APIView):
-    @swagger_auto_schema(request_body=DeleteBookSerializer,
-                         responses={200: DeleteBookSerializer})
-    def delete(self, request, pk, *args, **kwargs):
-        # 동화책 있니 없니
-        book_instance = Book.objects.get(id=pk)
-        if book_instance == 'POST':
-            book_instance.delete()
-        return Response({
-            "message": "삭제 완료"
-        }, status=status.HTTP_200_OK)
-'''
-'''
-class DeleteBookView(APIView):
-    @swagger_auto_schema(request_body=DeleteBookSerializer, responses={200: DeleteBookSerializer})
-    def delete(self, request, book_id, *args, **kwargs):
-        # 동화책 존재 여부 확인
-        book_instance = get_object_or_404(Book, pk=book_id)
-
-        # 동화책 및 연결된 페이지 삭제 처리
-        book_instance.is_deleted = True
-        book_instance.save()
-
-        # 연결된 페이지 삭제 처리
-        pages_to_delete = Page.objects.filter(book_id=book_id, is_deleted=False)
-        for page in pages_to_delete:
-            page.is_deleted = True
-            page.save()
-
-        return Response({
-            "message": "삭제 완료"
-        }, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 '''
