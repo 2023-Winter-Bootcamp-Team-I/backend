@@ -4,16 +4,14 @@ from django.shortcuts import render, get_object_or_404
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
-from rest_framework.decorators import api_view
-from rest_framework.generics import DestroyAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from page.models import Page
 from user.models import User
-
 from book.models import Book
 from book.serializers import BookSerializer, BookCreateSerializer, ContentSerializer, ContentChoiceSerializer, \
-    TitleCreateSerializer, UserBookListSerializer, UserBookSerializer, DeleteBookSerializer
+    TitleCreateSerializer, UserBookListSerializer, DeleteBookSerializer
+
 
 # 동화책 초기 정보 불러오기
 class BaseBook(APIView):
@@ -39,9 +37,9 @@ class BaseBook(APIView):
     def get(self, request):
         user_id = request.query_params.get('user_id')
         if user_id is not None:
-            #사용자가 존재 하느냐!!
+            # 사용자가 존재 하느냐!!
             get_object_or_404(User, pk=user_id)
-            books = Book.objects.filter(user_id=user_id)
+            books = Book.objects.filter(user_id=user_id)  # ", is_deleted=None" 이거를 괄호 안에 추가하면 될거 같은뎅...
             response_serializer = UserBookListSerializer(books, many=True)
             return Response({
                 'result': response_serializer.data
@@ -49,6 +47,7 @@ class BaseBook(APIView):
         return Response(status.HTTP_400_BAD_REQUEST)
 
 
+# 동화책 글 선택
 class ChoiceContent(APIView):
     @swagger_auto_schema(request_body=ContentSerializer,
                          responses={200: ContentChoiceSerializer})
@@ -67,8 +66,8 @@ class ChoiceContent(APIView):
         }, status.HTTP_400_BAD_REQUEST)
 
 
-class TitleCreateTitle(APIView):
-    # 동화책 이름 생성
+class BookDetail(APIView):
+    # 동화책 제목 작성
     @swagger_auto_schema(request_body=TitleCreateSerializer,
                          responses={200: TitleCreateSerializer})
     def put(self, request, pk, *args, **kwargs):
@@ -90,6 +89,43 @@ class TitleCreateTitle(APIView):
             'result': serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
 
+    # 동화책 글+그림 불러오기
+    @swagger_auto_schema(manual_parameters=[
+        openapi.Parameter('book_id', openapi.IN_QUERY, description='책 ID', type=openapi.TYPE_INTEGER)
+    ], responses={200: ContentChoiceSerializer})
+    def get(self, request, pk, *args, **kwargs):
+        book_id = request.query_params.get('book_id')
+
+        if book_id is not None:
+            book = get_object_or_404(Book, pk=book_id, is_deleted=None)
+            pages = Page.objects.filter(book_id=book_id).order_by('page_num')  # 수정된 부분입니다!!
+
+            content_list = []
+            for page in pages:
+                content_data = {
+                    'page_num': page.page_num,
+                    'ko_content': page.ko_content,
+                    'en_content': page.en_content,
+                    'image_url': page.image_url.url if page.image_url else None,
+                    # 이미지 url 없으면 null
+                    'created_at': page.created_at,
+                    'update_at': page.updated_at
+                }
+                content_list.append(content_data)
+
+            response_data = {
+                'book_id': book.book_id,
+                'title': book.title,
+                'content': content_list
+            }
+
+            return Response(response_data, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'message': '유효하지 않은 입력값',
+                'result': None
+            }, status=status.HTTP_400_BAD_REQUEST)
+
     # 동화책 삭제
     @swagger_auto_schema(responses={200: DeleteBookSerializer})
     def delete(self, request, pk, *args, **kwargs):
@@ -108,11 +144,3 @@ class TitleCreateTitle(APIView):
             return Response({
                 "message": "동화책이 존재하지 않습니다."
             }, status=status.HTTP_404_NOT_FOUND)
-
-'''
-# 동화책 글+그림 정보 불러오는거 만들다 만거입니다. 추후에 삭제하겠습니다.
-class CallTextImage(APIView):
-    @swagger_auto_schema(request_body=CallTextImageSerializer,
-                         responses={200:CallTextImageSerializer})
-    def get(self, request, pk, *args, **kwargs):
-'''
