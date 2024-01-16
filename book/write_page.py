@@ -222,6 +222,7 @@ class WritePage(WebsocketConsumer):
 
     # -------------------------------------------------------------------- 응답을 클라이언트한테 전송하는 함수
     def send_response_to_client(self, pageCnt):
+        openai.api_key = get_secret("GPT_KEY")
         # GPT-3 스트리밍 API 호출
         for response in openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
