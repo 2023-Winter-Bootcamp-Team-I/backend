@@ -91,40 +91,31 @@ class BookDetail(APIView):
 
     # 동화책 글+그림 불러오기
     @swagger_auto_schema(manual_parameters=[
-        openapi.Parameter('book_id', openapi.IN_QUERY, description='책 ID', type=openapi.TYPE_INTEGER)
+        openapi.Parameter('id', openapi.IN_PATH, description='책 ID', type=openapi.TYPE_INTEGER)
     ], responses={200: ContentChoiceSerializer})
     def get(self, request, pk, *args, **kwargs):
-        book_id = request.query_params.get('book_id')
+        book = get_object_or_404(Book, pk=pk, is_deleted=None)
+        pages = Page.objects.filter(book_id=pk).order_by('page_num')
 
-        if book_id is not None:
-            book = get_object_or_404(Book, pk=book_id, is_deleted=None)
-            pages = Page.objects.filter(book_id=book_id).order_by('page_num')  # 수정된 부분입니다!!
-
-            content_list = []
-            for page in pages:
-                content_data = {
-                    'page_num': page.page_num,
-                    'ko_content': page.ko_content,
-                    'en_content': page.en_content,
-                    'image_url': page.image_url.url if page.image_url else None,
-                    # 이미지 url 없으면 null
-                    'created_at': page.created_at,
-                    'update_at': page.updated_at
-                }
-                content_list.append(content_data)
-
-            response_data = {
-                'book_id': book.book_id,
-                'title': book.title,
-                'content': content_list
+        content_list = []
+        for page in pages:
+            content_data = {
+                'page_num': page.page_num,
+                'ko_content': page.ko_content,
+                'en_content': page.en_content,
+                'image_url': page.image_url.url if page.image_url else None,
+                'created_at': page.created_at,
+                'update_at': page.updated_at
             }
+            content_list.append(content_data)
 
-            return Response(response_data, status=status.HTTP_200_OK)
-        else:
-            return Response({
-                'message': '유효하지 않은 입력값',
-                'result': None
-            }, status=status.HTTP_400_BAD_REQUEST)
+        response_data = {
+            'book_id': book.book_id,
+            'title': book.title,
+            'content': content_list
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
 
     # 동화책 삭제
     @swagger_auto_schema(responses={200: DeleteBookSerializer})
