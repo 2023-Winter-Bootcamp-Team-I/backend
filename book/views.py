@@ -8,10 +8,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from page.models import Page
 from user.models import User
-
 from book.models import Book
 from book.serializers import BookSerializer, BookCreateSerializer, ContentSerializer, ContentChoiceSerializer, \
     TitleCreateSerializer, UserBookListSerializer, DeleteBookSerializer
+
 
 # 동화책 초기 정보 불러오기
 class BaseBook(APIView):
@@ -37,9 +37,9 @@ class BaseBook(APIView):
     def get(self, request):
         user_id = request.query_params.get('user_id')
         if user_id is not None:
-            #사용자가 존재 하느냐!!
+            # 사용자가 존재 하느냐!!
             get_object_or_404(User, pk=user_id)
-            books = Book.objects.filter(user_id=user_id)
+            books = Book.objects.filter(user_id=user_id)  # ", is_deleted=None" 이거를 괄호 안에 추가하면 될거 같은뎅...
             response_serializer = UserBookListSerializer(books, many=True)
             return Response({
                 'result': response_serializer.data
@@ -47,6 +47,7 @@ class BaseBook(APIView):
         return Response(status.HTTP_400_BAD_REQUEST)
 
 
+# 동화책 글 선택
 class ChoiceContent(APIView):
     @swagger_auto_schema(request_body=ContentSerializer,
                          responses={200: ContentChoiceSerializer})
@@ -66,7 +67,7 @@ class ChoiceContent(APIView):
 
 
 class BookDetail(APIView):
-    # 동화책 이름 생성
+    # 동화책 제목 작성
     @swagger_auto_schema(request_body=TitleCreateSerializer,
                          responses={200: TitleCreateSerializer})
     def put(self, request, pk, *args, **kwargs):
@@ -96,8 +97,8 @@ class BookDetail(APIView):
         book_id = request.query_params.get('book_id')
 
         if book_id is not None:
-            book = get_object_or_404(Book, pk=book_id)
-            pages = Page.objects.filter(book_id=book_id).order_by('page_num')
+            book = get_object_or_404(Book, pk=book_id, is_deleted=None)
+            pages = Page.objects.filter(book_id=book_id).order_by('page_num')  # 수정된 부분입니다!!
 
             content_list = []
             for page in pages:
@@ -105,7 +106,8 @@ class BookDetail(APIView):
                     'page_num': page.page_num,
                     'ko_content': page.ko_content,
                     'en_content': page.en_content,
-                    'image_url': page.image_url.url if page.image_url else None,  # 이미지 url 없으면 null
+                    'image_url': page.image_url.url if page.image_url else None,
+                    # 이미지 url 없으면 null
                     'created_at': page.created_at,
                     'update_at': page.updated_at
                 }
