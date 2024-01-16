@@ -18,7 +18,7 @@ class WritePage(WebsocketConsumer):
         self.book_image = [] #이미지 저장
         self.book_content_ko = []
         self.book_content_en = []
-
+        self.conversation = []
 
 # ---------------------------------------------------------------------- 소켓 통신 연결 해제
     def disconnect(self, closed_code):
@@ -50,10 +50,10 @@ class WritePage(WebsocketConsumer):
 
         if text_data_json['type'] == 'start':
             user_info = self.extract_user_info(text_data_json)
-            responses = self.generate_start_gpt_responses(user_info) # 시작
+            self.generate_start_gpt_responses(user_info) # 시작
             # 페이지 번호 증가 및 응답 반환
             pageCnt += 1
-            self.send_response_to_client(responses, pageCnt)
+            self.send_response_to_client(pageCnt)
 
         elif text_data_json['type'] == 'ing':
             # 책 내용 가져온거 처리하기
@@ -69,14 +69,14 @@ class WritePage(WebsocketConsumer):
 
             # 6번째 페이지 처리
             if pageCnt == 6:
-                responses = self.generate_last_ing_gpt_responses(choice) # 끝
+                self.generate_last_ing_gpt_responses(choice) # 끝
                 pageCnt += 1
-                self.send_response_to_client(responses, pageCnt)
+                self.send_response_to_client(pageCnt)
 
             else: # 2~5번 페이지 처리
-                responses = self.generate_ing_gpt_responses(choice) # 중간
+                self.generate_ing_gpt_responses(choice) # 중간
                 pageCnt += 1
-                self.send_response_to_client(responses, pageCnt)
+                self.send_response_to_client(pageCnt)
 
         elif text_data_json['type'] == 'end': # 마지막 선택 처리
 
@@ -221,11 +221,11 @@ class WritePage(WebsocketConsumer):
 
 
     # -------------------------------------------------------------------- 응답을 클라이언트한테 전송하는 함수
-    def send_response_to_client(self, responses, pageCnt):
+    def send_response_to_client(self, pageCnt):
         # GPT-3 스트리밍 API 호출
         for response in openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=responses,
+            messages=self.conversation,
             temperature=0.5,
             stream=True
         ):
