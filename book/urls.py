@@ -2,7 +2,7 @@ from django.urls import path, include
 
 from backend.urls import schema_view
 from .views import (
-    BaseBook, ChoiceContent, BookDetail
+    BaseBook, ChoiceContent, BookDetail, EmailBookShare
 )
 
 from django.urls import re_path
@@ -14,4 +14,5 @@ urlpatterns = [
     path("books/page/", ChoiceContent.as_view()),
     re_path(r"books/$", WritePage.as_asgi()),
     path('books/<int:pk>', BookDetail.as_view(), name='book-title-create'),
+    path('books/share', EmailBookShare.as_view()),
 ]
