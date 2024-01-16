@@ -7,11 +7,10 @@ from channels.generic.websocket import WebsocketConsumer
 from page.models import Page
 from backend.settings import get_secret
 import uuid
-
-
 class WritePage(WebsocketConsumer):
 # ----------------------------------------------------------------------- 소켓 통신 연결
     def connect(self):
+        # print("connecting")
         self.accept()
         #책-페이지 저장 리스트 아래 작성
         self.book_content = [] #전체 컨텐츠 저장
@@ -19,18 +18,15 @@ class WritePage(WebsocketConsumer):
         self.book_content_ko = []
         self.book_content_en = []
         self.conversation = []
-
 # ---------------------------------------------------------------------- 소켓 통신 연결 해제
     def disconnect(self, closed_code):
         # 만약에 중간에 끊킨 경우, book_id와 관련된 것 전부 삭제
         book_object = Page.objects.get(id=self.book_id)
         pages = Page.objects.filter(book_id=book_object)
         page_num = pages.count()
-
         # 가져온 페이지의 수와 예상 페이지 수가 다르면 삭제
         if page_num != self.page_num:
             Page.objects.filter(book_id=self.book_id).delete()
-
         for pages in pages:
             try:
                 # 해당 페이지의 한국어 내용과 영어 내용을 가져와 출력
@@ -40,58 +36,41 @@ class WritePage(WebsocketConsumer):
             except:
                 Page.objects.filter(book_id=self.book_id).delete()
         pass
-
-
 # --------------------------------------------------------------------- 소켓 통신 (메세지)
     def receive(self, text_data):
-
         text_data_json = json.loads(text_data) #data를 받음
         pageCnt = text_data_json.get('pageCnt')
-
         if text_data_json['type'] == 'start':
             user_info = self.extract_user_info(text_data_json)
             self.generate_start_gpt_responses(user_info) # 시작
             # 페이지 번호 증가 및 응답 반환
             pageCnt += 1
             self.send_response_to_client(pageCnt)
-
         elif text_data_json['type'] == 'ing':
             # 책 내용 가져온거 처리하기
             choice = text_data_json.get('choice')
-
             koContent = text_data_json.get('koContent')
             enContent = text_data_json.get('enContent')
-
             uuid = str(uuid.uuid4()) # db에 uuid 넣은 이미지 저장
             self.save_story_to_db(uuid, pageCnt, koContent, enContent)
-
             image = self.generate_dalle_image(uuid,enContent) # 비동기 함수 ??
-
             # 6번째 페이지 처리
             if pageCnt == 6:
                 self.generate_last_ing_gpt_responses(choice) # 끝
                 pageCnt += 1
                 self.send_response_to_client(pageCnt)
-
             else: # 2~5번 페이지 처리
                 self.generate_ing_gpt_responses(choice) # 중간
                 pageCnt += 1
                 self.send_response_to_client(pageCnt)
-
         elif text_data_json['type'] == 'end': # 마지막 선택 처리
-
             koContent = text_data_json.get('koContent')
             enContent = text_data_json.get('enContent')
-
             uuid = str(uuid.uuid4())
             self.save_story_to_db(uuid, pageCnt, koContent, enContent)
-
             image = self.generate_dalle_image(uuid,enContent) # 리턴 값이 url임 -> 나중에 비동기
             #print(image)
-
-
 ######################## 함수들 ########################
-
 # --------------------------------------------------------------------- 이야기 만들 때 필요한 함수들
 # 자 이거 api 명세서에 유림님이 적어주신 카멜케이스 변수명 대로 수정 부탁드려요 (저는 하다가 말았어요~)
     def extract_user_info(self, data):
@@ -103,9 +82,7 @@ class WritePage(WebsocketConsumer):
             'fairyTale': data.get('fairyTale')
         }
         return user_info
-
     def generate_start_gpt_responses(self, user_info):
-
         if user_info['language'] == 'ko':  # 프론트에서.. language로 하기로 했대요..... 그리고 프롬프팅 두개다 변경 부탁 드려요!
             self.conversation = [
                 {
@@ -126,7 +103,6 @@ class WritePage(WebsocketConsumer):
                                f"(20초 이내로)"
                 }
             ]
-
         elif user_info['language'] == "en":
             self.conversation = [
                 {
@@ -147,8 +123,6 @@ class WritePage(WebsocketConsumer):
                                f"(20초 이내로)"
                 }
             ]
-
-
     def generate_ing_gpt_responses(self, choice):
         # 지피티씨 호출해서 만들고 반환하기. -> 내가 선택한 이야기로 진행해주고 계속 이어서 두가지로 해줘
         self.conversation = [
@@ -157,7 +131,6 @@ class WritePage(WebsocketConsumer):
                 "content": f"{choice}번을 고르겠습니다. {choice}번의 이야기에 이어지는 이야기를 이전에 당신의 응답과 같이 제시해주세요(20초 이내로)"
             },
         ]
-
     def generate_last_ing_gpt_responses(self, choice):
         # 지피티씨 호출해서 만들고 반환하기. -> 내가 선택한 이야기로 이야기 마무리 엔딩 내줘
         self.conversation = [
@@ -166,14 +139,11 @@ class WritePage(WebsocketConsumer):
                 "content": f"{choice}번의 내용으로 동화 내용 마무리 엔딩 지어주세요.(20초 이내로)"
             },
         ]
-
-
 # -------------------------------------------------------------------- db 넣는 함수들
     #db에 page 저장
     def save_story_to_db(self, uuid, pageCnt, koContent, enContent):
         imageUrl = get_secret("FILE_URL") + "/" + uuid + ".jpg"
         Page.objects.create(imageUrl=imageUrl, pageCnt=pageCnt, koContent=koContent, enContent=enContent)
-
     # 달리 이미지 생성
     def generate_dalle_image(self, uuid ,enContent, boto3=None):
         response = openai.Image.create(
@@ -189,10 +159,8 @@ class WritePage(WebsocketConsumer):
         )
         # url 추출
         imageUrl = response['data'][0]['url']
-
         # 이미지 다운로드
         image_data = requests.get(imageUrl).content
-
         # S3 클라이언트 생성
         try:
             # S3 버킷에 이미지 업로드
@@ -200,7 +168,6 @@ class WritePage(WebsocketConsumer):
         except NoCredentialsError:
             print("AWS credentials not available.")
             return None
-
     # 파일 S3 접근 및 업로드
     def get_file_url(uuid,file):
         s3_client = boto3.client(
@@ -209,17 +176,12 @@ class WritePage(WebsocketConsumer):
             aws_secret_access_key = get_secret("Secret_access_key"),
         )
         file_key = uuid + ".jpg"
-
         s3_client.put_object(Body=file, Bucket=get_secret("AWS_BUCKET_NAME"), Key=file_key)
         # 업로드된 파일의 URL을 구성
         url = get_secret("FILE_URL") + "/" + file_key
-
         # URL 문자열에서 공백을 "_"로 대체
         url = url.replace(" ", "_")
-
         return url
-
-
     # -------------------------------------------------------------------- 응답을 클라이언트한테 전송하는 함수
     def send_response_to_client(self, pageCnt):
         openai.api_key = get_secret("GPT_KEY")
@@ -230,24 +192,20 @@ class WritePage(WebsocketConsumer):
             temperature=0.5,
             stream=True
         ):
+            # print(response)
             # 각 응답 조각 처리
-            message = response.choices[0].message['content']
+            message = response.choices[0].delta["content"]
             if message:
                 #클라이언트에게 실시간으로 메세지 전송
                 self.send(text_data=json.dumps({"message": message}))
-
-
         # if 초기 생성 -> 초기 값을 서버가 받음 (n번 페이지) = 0 <start>
             # data json 형태니까 나눌 수 있겠지
             # 나이 성별 이름 동화 등을 가지고 gpt 함수를 부를거야
             # 답변이 생성되면 프론트로 디비 저장 않고, 다시 보내줘 -> 두개 다 반환 n++ 까지 하고 n 전달
         # elif 책 만들고 있는 경우 -> 선택한 스토리를 서버가 받음 (n번 페이지) <ing>
             # data json 형태니까 나눌 수 있겠지
-
             # 1. 받은 스토리(n번 페이지)를 db에 저장 -> 페이지 숫자랑 내용이랑 등등 + 이미지 UUID생성
-
             # 2. 받은 스토리(n번 페이지) 셀러리로 넘겨서 달리로 그림 생성 하기 + 위 이미지 UUiD전달
-
             # 3. if n+1번 페이지 제작 중 == 6 <- 분기 이유 : 프롬프팅 함수가 달라짐.
                 # 3-1. 이전에 받은 값(n) 받아서 이야기 2개 생성
                 # 3-2. 답변 생성되면 프론트로 다시 보내기 -> 두개다 반환 (영어버전 한글 버전 다) n++
