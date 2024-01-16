@@ -39,7 +39,7 @@ class BaseBook(APIView):
         if user_id is not None:
             # 사용자가 존재 하느냐!!
             get_object_or_404(User, pk=user_id)
-            books = Book.objects.filter(user_id=user_id)  # ", is_deleted=None" 이거를 괄호 안에 추가하면 될거 같은뎅...
+            books = Book.objects.filter(user_id=user_id, is_deleted=None)  # 수정된 부분입니다
             response_serializer = UserBookListSerializer(books, many=True)
             return Response({
                 'result': response_serializer.data
