@@ -1,3 +1,4 @@
+from django.core.mail import EmailMessage
 from django.http import Http404
 from datetime import datetime
 from django.shortcuts import render, get_object_or_404
@@ -10,7 +11,7 @@ from page.models import Page
 from user.models import User
 from book.models import Book
 from book.serializers import BookSerializer, BookCreateSerializer, ContentSerializer, ContentChoiceSerializer, \
-    TitleCreateSerializer, UserBookListSerializer, DeleteBookSerializer
+    TitleCreateSerializer, UserBookListSerializer, DeleteBookSerializer, EmailBookShareSerializer
 
 
 # 동화책 초기 정보 불러오기
@@ -135,3 +136,26 @@ class BookDetail(APIView):
             return Response({
                 "message": "동화책이 존재하지 않습니다."
             }, status=status.HTTP_404_NOT_FOUND)
+
+
+class EmailBookShare(APIView):
+    @swagger_auto_schema(query_serializer=EmailBookShareSerializer)
+    def get(self, request):
+        serializer = EmailBookShareSerializer(data=request.query_params)
+        if serializer.is_valid():
+            uuid = serializer.validated_data['uuid']
+            take = serializer.validated_data['to']           # 받는 사람
+            book_id = serializer.validated_data['book_id']
+
+            url = "http://bookg/api/v1/books/"
+            urlDetail = url + uuid
+            subject = "소중한 책 선물"              # 메일의 제목
+            from_email = "kjy154969@naver.com"  # 보내는 사람
+            message = f"{urlDetail} 을 통해 공유 된 책을 감상할 수 있어요!"
+            EmailMessage(subject=subject, body=message, to=[take], from_email=from_email).send()
+            return Response({"message": "이메일 보내기 성공",
+                             "result": {
+                                 "share_email": f"{urlDetail}",
+                                 "book_id": book_id
+                             }})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
