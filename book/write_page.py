@@ -30,8 +30,8 @@ class WritePage(WebsocketConsumer):
         for pages in pages:
             try:
                 # 해당 페이지의 한국어 내용과 영어 내용을 가져와 출력
-                koContent = pages.koContent
-                enContent = pages.enContent
+                koContent = pages.ko_content
+                enContent = pages.en_content
                 print(koContent, enContent)
             except:
                 Page.objects.filter(book_id=self.book_id).delete()
@@ -39,36 +39,40 @@ class WritePage(WebsocketConsumer):
 # --------------------------------------------------------------------- 소켓 통신 (메세지)
     def receive(self, text_data):
         text_data_json = json.loads(text_data) #data를 받음
-        pageCnt = text_data_json.get('pageCnt')
+        page_num = text_data_json.get('pageCnt')
         if text_data_json['type'] == 'start':
             user_info = self.extract_user_info(text_data_json)
             self.generate_start_gpt_responses(user_info) # 시작
             # 페이지 번호 증가 및 응답 반환
-            pageCnt += 1
-            self.send_response_to_client(pageCnt)
+            page_num += 1
+            self.send_response_to_client(page_num)
         elif text_data_json['type'] == 'ing':
             # 책 내용 가져온거 처리하기
             choice = text_data_json.get('choice')
-            koContent = text_data_json.get('koContent')
-            enContent = text_data_json.get('enContent')
-            image_uuid = str(uuid.uuid4()) # db에 uuid 넣은 이미지 저장
-            self.save_story_to_db(image_uuid, pageCnt, koContent, enContent)
-            image = self.generate_dalle_image(image_uuid,enContent) # 비동기 함수 ??
+
+            ko_content = text_data_json.get('koContent')
+            en_content = text_data_json.get('enContent')
+            uuid = str(uuid.uuid4()) # db에 uuid 넣은 이미지 저장
+            self.save_story_to_db(uuid, page_num, ko_content, en_content)
+            image = self.generate_dalle_image(uuid,enContent) # 비동기 함수 ??
+
             # 6번째 페이지 처리
-            if pageCnt == 6:
+            if page_num == 6:
                 self.generate_last_ing_gpt_responses(choice) # 끝
-                pageCnt += 1
-                self.send_response_to_client(pageCnt)
+                page_num += 1
+                self.send_response_to_client(page_num)
             else: # 2~5번 페이지 처리
                 self.generate_ing_gpt_responses(choice) # 중간
-                pageCnt += 1
-                self.send_response_to_client(pageCnt)
+                page_num += 1
+                self.send_response_to_client(page_num)
         elif text_data_json['type'] == 'end': # 마지막 선택 처리
-            koContent = text_data_json.get('koContent')
-            enContent = text_data_json.get('enContent')
-            image_uuid = str(uuid.uuid4())
-            self.save_story_to_db(image_uuid, pageCnt, koContent, enContent)
-            image = self.generate_dalle_image(image_uuid,enContent) # 리턴 값이 url임 -> 나중에 비동기
+
+            ko_content = text_data_json.get('koContent')
+            en_content = text_data_json.get('enContent')
+            uuid = str(uuid.uuid4())
+            self.save_story_to_db(uuid, page_num, ko_content, en_content)
+            image = self.generate_dalle_image(uuid,enContent) # 리턴 값이 url임 -> 나중에 비동기
+          
             #print(image)
 ######################## 함수들 ########################
 # --------------------------------------------------------------------- 이야기 만들 때 필요한 함수들
@@ -141,9 +145,11 @@ class WritePage(WebsocketConsumer):
         ]
 # -------------------------------------------------------------------- db 넣는 함수들
     #db에 page 저장
-    def save_story_to_db(self, image_uuid, pageCnt, koContent, enContent):
-        imageUrl = get_secret("FILE_URL") + "/" + image_uuid + ".jpg"
-        Page.objects.create(imageUrl=imageUrl, pageCnt=pageCnt, koContent=koContent, enContent=enContent)
+
+    def save_story_to_db(self, uuid, page_num, ko_content, en_content):
+        imageUrl = get_secret("FILE_URL") + "/" + uuid + ".jpg"
+        Page.objects.create(image_url=imageUrl, page_num=page_num, ko_content=ko_content, en_content=en_content)
+
     # 달리 이미지 생성
     def generate_dalle_image(self, image_uuid ,enContent, boto3=None):
         response = openai.Image.create(
