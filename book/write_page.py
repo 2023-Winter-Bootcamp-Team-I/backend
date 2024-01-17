@@ -51,9 +51,9 @@ class WritePage(WebsocketConsumer):
             choice = text_data_json.get('choice')
             koContent = text_data_json.get('koContent')
             enContent = text_data_json.get('enContent')
-            uuid = str(uuid.uuid4()) # db에 uuid 넣은 이미지 저장
-            self.save_story_to_db(uuid, pageCnt, koContent, enContent)
-            image = self.generate_dalle_image(uuid,enContent) # 비동기 함수 ??
+            image_uuid = str(uuid.uuid4()) # db에 uuid 넣은 이미지 저장
+            self.save_story_to_db(image_uuid, pageCnt, koContent, enContent)
+            image = self.generate_dalle_image(image_uuid,enContent) # 비동기 함수 ??
             # 6번째 페이지 처리
             if pageCnt == 6:
                 self.generate_last_ing_gpt_responses(choice) # 끝
@@ -66,9 +66,9 @@ class WritePage(WebsocketConsumer):
         elif text_data_json['type'] == 'end': # 마지막 선택 처리
             koContent = text_data_json.get('koContent')
             enContent = text_data_json.get('enContent')
-            uuid = str(uuid.uuid4())
-            self.save_story_to_db(uuid, pageCnt, koContent, enContent)
-            image = self.generate_dalle_image(uuid,enContent) # 리턴 값이 url임 -> 나중에 비동기
+            image_uuid = str(uuid.uuid4())
+            self.save_story_to_db(image_uuid, pageCnt, koContent, enContent)
+            image = self.generate_dalle_image(image_uuid,enContent) # 리턴 값이 url임 -> 나중에 비동기
             #print(image)
 ######################## 함수들 ########################
 # --------------------------------------------------------------------- 이야기 만들 때 필요한 함수들
@@ -141,11 +141,11 @@ class WritePage(WebsocketConsumer):
         ]
 # -------------------------------------------------------------------- db 넣는 함수들
     #db에 page 저장
-    def save_story_to_db(self, uuid, pageCnt, koContent, enContent):
-        imageUrl = get_secret("FILE_URL") + "/" + uuid + ".jpg"
+    def save_story_to_db(self, image_uuid, pageCnt, koContent, enContent):
+        imageUrl = get_secret("FILE_URL") + "/" + image_uuid + ".jpg"
         Page.objects.create(imageUrl=imageUrl, pageCnt=pageCnt, koContent=koContent, enContent=enContent)
     # 달리 이미지 생성
-    def generate_dalle_image(self, uuid ,enContent, boto3=None):
+    def generate_dalle_image(self, image_uuid ,enContent, boto3=None):
         response = openai.Image.create(
             prompt=[{
                     "role": "system",
@@ -164,18 +164,18 @@ class WritePage(WebsocketConsumer):
         # S3 클라이언트 생성
         try:
             # S3 버킷에 이미지 업로드
-            get_file_url(uuid,image_data)
+            get_file_url(image_uuid,image_data)
         except NoCredentialsError:
             print("AWS credentials not available.")
             return None
     # 파일 S3 접근 및 업로드
-    def get_file_url(uuid,file):
+    def get_file_url(image_uuid,file):
         s3_client = boto3.client(
             's3',
             aws_access_key_id = get_secret("Access_key_ID"),
             aws_secret_access_key = get_secret("Secret_access_key"),
         )
-        file_key = uuid + ".jpg"
+        file_key = image_uuid + ".jpg"
         s3_client.put_object(Body=file, Bucket=get_secret("AWS_BUCKET_NAME"), Key=file_key)
         # 업로드된 파일의 URL을 구성
         url = get_secret("FILE_URL") + "/" + file_key
