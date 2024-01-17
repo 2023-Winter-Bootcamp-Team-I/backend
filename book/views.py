@@ -104,7 +104,7 @@ class BookDetail(APIView):
                 'page_num': page.page_num,
                 'ko_content': page.ko_content,
                 'en_content': page.en_content,
-                'image_url': page.image_url.url if page.image_url else None,
+                'image_url': page.image_url.url if page.image_url else 'https://bookg-s3-bucket.s3.ap-northeast-2.amazonaws.com/UUID.png',
                 'created_at': page.created_at,
                 'update_at': page.updated_at
             }
