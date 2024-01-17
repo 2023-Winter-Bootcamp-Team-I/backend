@@ -67,6 +67,5 @@ class CallTextImageSerializer(serializers.Serializer):
         fields = ['book_id']
 
 class EmailBookShareSerializer(serializers.Serializer):
-    uuid = serializers.CharField()
     to = serializers.EmailField()
     book_id = serializers.IntegerField()
