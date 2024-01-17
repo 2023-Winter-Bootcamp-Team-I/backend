@@ -46,8 +46,6 @@ INSTALLED_APPS = [
     'page',
     'drf_yasg',
     'channels',
-    'django_celery_beat',
-    'django_celery_results'
 ]
 
 ASGI_APPLICATION = "backend.asgi.application"
