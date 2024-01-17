@@ -143,12 +143,11 @@ class EmailBookShare(APIView):
     def get(self, request):
         serializer = EmailBookShareSerializer(data=request.query_params)
         if serializer.is_valid():
-            uuid = serializer.validated_data['uuid']
             take = serializer.validated_data['to']           # 받는 사람
             book_id = serializer.validated_data['book_id']
 
             url = "http://bookg/api/v1/books/"
-            urlDetail = url + uuid
+            urlDetail = url + book_id
             subject = "소중한 책 선물"              # 메일의 제목
             from_email = "kjy154969@naver.com"  # 보내는 사람
             message = f"{urlDetail} 을 통해 공유 된 책을 감상할 수 있어요!"
