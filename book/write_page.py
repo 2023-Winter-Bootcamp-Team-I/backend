@@ -194,10 +194,13 @@ class WritePage(WebsocketConsumer):
         ):
             # print(response)
             # 각 응답 조각 처리
-            message = response.choices[0].delta["content"]
-            if message:
-                #클라이언트에게 실시간으로 메세지 전송
+            if 'delta' in response.choices[0] and 'content' in response.choices[0].delta:
+                message = response.choices[0].delta["content"]
+                # 클라이언트에게 실시간으로 메세지 전송
                 self.send(text_data=json.dumps({"message": message}))
+            else:
+                # 'delta' 또는 'content' 키가 없는 경우에 대한 처리 추가
+                print("Invalid response format: {}".format(response))
         # if 초기 생성 -> 초기 값을 서버가 받음 (n번 페이지) = 0 <start>
             # data json 형태니까 나눌 수 있겠지
             # 나이 성별 이름 동화 등을 가지고 gpt 함수를 부를거야
