@@ -56,6 +56,8 @@ class WritePage(WebsocketConsumer):
                 )
                 book.save()
 
+                self.book_id = book.book_id
+
             except KeyError as e:
                 #text_data_json에서 필요한 키가 누락된 경우
                 print(f"Missing key in text_data_json: {e}")
@@ -75,7 +77,7 @@ class WritePage(WebsocketConsumer):
             ko_content = text_data_json.get('koContent')
             en_content = text_data_json.get('enContent')
             image_uuid = str(uuid.uuid4()) # db에 uuid 넣은 이미지 저장
-            self.save_story_to_db(image_uuid, page_num, ko_content, en_content)
+            self.save_story_to_db(self.book_id, image_uuid, page_num, ko_content, en_content)
             image = self.generate_dalle_image(image_uuid, en_content) # 비동기 함수 ??
 
             # 6번째 페이지 처리
@@ -92,7 +94,7 @@ class WritePage(WebsocketConsumer):
             ko_content = text_data_json.get('koContent')
             en_content = text_data_json.get('enContent')
             image_uuid = str(uuid.uuid4())
-            self.save_story_to_db(image_uuid, page_num, ko_content, en_content)
+            self.save_story_to_db(self.book_id, image_uuid, page_num, ko_content, en_content)
             image = self.generate_dalle_image(image_uuid, en_content) # 리턴 값이 url임 -> 나중에 비동기
           
             #print(image)
@@ -170,7 +172,7 @@ class WritePage(WebsocketConsumer):
 
     def save_story_to_db(self, image_uuid, page_num, ko_content, en_content):
         imageUrl = get_secret("FILE_URL") + "/" + image_uuid + ".jpg"
-        Page.objects.create(image_url=imageUrl, page_num=page_num, ko_content=ko_content, en_content=en_content)
+        Page.objects.create(book_id = self.book_id, image_url=imageUrl, page_num=page_num, ko_content=ko_content, en_content=en_content)
 
     # 달리 이미지 생성
     def generate_dalle_image(self, image_uuid ,enContent, boto3=None):
