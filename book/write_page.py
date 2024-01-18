@@ -4,6 +4,10 @@ import openai
 import requests
 from botocore.exceptions import NoCredentialsError
 from channels.generic.websocket import WebsocketConsumer
+from django.db import IntegrityError
+from pip._internal.operations.prepare import get_file_url
+
+from book.models import Book
 from page.models import Page
 from backend.settings import get_secret
 import uuid
@@ -21,7 +25,7 @@ class WritePage(WebsocketConsumer):
 # ---------------------------------------------------------------------- 소켓 통신 연결 해제
     def disconnect(self, closed_code):
         # 만약에 중간에 끊킨 경우, book_id와 관련된 것 전부 삭제
-        book_object = Page.objects.get(id=self.book_id)
+        book_object = Book.objects.get(id=self.book_id)
         pages = Page.objects.filter(book_id=book_object)
         page_num = pages.count()
         # 가져온 페이지의 수와 예상 페이지 수가 다르면 삭제
@@ -30,8 +34,8 @@ class WritePage(WebsocketConsumer):
         for pages in pages:
             try:
                 # 해당 페이지의 한국어 내용과 영어 내용을 가져와 출력
-                koContent = pages.koContent
-                enContent = pages.enContent
+                koContent = pages.ko_content
+                enContent = pages.en_content
                 print(koContent, enContent)
             except:
                 Page.objects.filter(book_id=self.book_id).delete()
@@ -39,36 +43,60 @@ class WritePage(WebsocketConsumer):
 # --------------------------------------------------------------------- 소켓 통신 (메세지)
     def receive(self, text_data):
         text_data_json = json.loads(text_data) #data를 받음
-        pageCnt = text_data_json.get('pageCnt')
+        page_num = text_data_json.get('pageCnt')
         if text_data_json['type'] == 'start':
             user_info = self.extract_user_info(text_data_json)
+
+            try:
+                book = Book(
+                    username=text_data_json['username'],
+                    fairytale=text_data_json['fairytale'],
+                    gender=text_data_json['gender'],
+                    age=text_data_json['age']
+                )
+                book.save()
+
+                self.book_id = book.book_id
+
+            except KeyError as e:
+                #text_data_json에서 필요한 키가 누락된 경우
+                print(f"Missing key in text_data_json: {e}")
+
+            except IntegrityError as e:
+                print(f"Database Integrity Error: {e}")
+
             self.generate_start_gpt_responses(user_info) # 시작
             # 페이지 번호 증가 및 응답 반환
-            pageCnt += 1
-            self.send_response_to_client(pageCnt)
+            page_num += 1
+            self.send_response_to_client(page_num)
+
         elif text_data_json['type'] == 'ing':
             # 책 내용 가져온거 처리하기
             choice = text_data_json.get('choice')
-            koContent = text_data_json.get('koContent')
-            enContent = text_data_json.get('enContent')
-            uuid = str(uuid.uuid4()) # db에 uuid 넣은 이미지 저장
-            self.save_story_to_db(uuid, pageCnt, koContent, enContent)
-            image = self.generate_dalle_image(uuid,enContent) # 비동기 함수 ??
+
+            ko_content = text_data_json.get('koContent')
+            en_content = text_data_json.get('enContent')
+            image_uuid = str(uuid.uuid4()) # db에 uuid 넣은 이미지 저장
+            self.save_story_to_db(self.book_id, image_uuid, page_num, ko_content, en_content)
+            image = self.generate_dalle_image(image_uuid, en_content) # 비동기 함수 ??
+
             # 6번째 페이지 처리
-            if pageCnt == 6:
+            if page_num == 6:
                 self.generate_last_ing_gpt_responses(choice) # 끝
-                pageCnt += 1
-                self.send_response_to_client(pageCnt)
+                page_num += 1
+                self.send_response_to_client(page_num)
             else: # 2~5번 페이지 처리
                 self.generate_ing_gpt_responses(choice) # 중간
-                pageCnt += 1
-                self.send_response_to_client(pageCnt)
+                page_num += 1
+                self.send_response_to_client(page_num)
         elif text_data_json['type'] == 'end': # 마지막 선택 처리
-            koContent = text_data_json.get('koContent')
-            enContent = text_data_json.get('enContent')
-            uuid = str(uuid.uuid4())
-            self.save_story_to_db(uuid, pageCnt, koContent, enContent)
-            image = self.generate_dalle_image(uuid,enContent) # 리턴 값이 url임 -> 나중에 비동기
+
+            ko_content = text_data_json.get('koContent')
+            en_content = text_data_json.get('enContent')
+            image_uuid = str(uuid.uuid4())
+            self.save_story_to_db(self.book_id, image_uuid, page_num, ko_content, en_content)
+            image = self.generate_dalle_image(image_uuid, en_content) # 리턴 값이 url임 -> 나중에 비동기
+          
             #print(image)
 ######################## 함수들 ########################
 # --------------------------------------------------------------------- 이야기 만들 때 필요한 함수들
@@ -141,11 +169,14 @@ class WritePage(WebsocketConsumer):
         ]
 # -------------------------------------------------------------------- db 넣는 함수들
     #db에 page 저장
-    def save_story_to_db(self, uuid, pageCnt, koContent, enContent):
-        imageUrl = get_secret("FILE_URL") + "/" + uuid + ".jpg"
-        Page.objects.create(imageUrl=imageUrl, pageCnt=pageCnt, koContent=koContent, enContent=enContent)
+
+    def save_story_to_db(self, image_uuid, page_num, ko_content, en_content):
+        imageUrl = get_secret("FILE_URL") + "/" + image_uuid + ".jpg"
+        Page.objects.create(book_id = self.book_id, image_url=imageUrl, page_num=page_num, ko_content=ko_content, en_content=en_content)
+
     # 달리 이미지 생성
-    def generate_dalle_image(self, uuid ,enContent, boto3=None):
+    def generate_dalle_image(self, image_uuid ,enContent, boto3=None):
+        openai.api_key = get_secret("GPT_KEY")
         response = openai.Image.create(
             prompt=[{
                     "role": "system",
@@ -164,18 +195,18 @@ class WritePage(WebsocketConsumer):
         # S3 클라이언트 생성
         try:
             # S3 버킷에 이미지 업로드
-            get_file_url(uuid,image_data)
+            get_file_url(image_uuid,image_data)
         except NoCredentialsError:
             print("AWS credentials not available.")
             return None
     # 파일 S3 접근 및 업로드
-    def get_file_url(uuid,file):
+    def get_file_url(image_uuid,file):
         s3_client = boto3.client(
             's3',
             aws_access_key_id = get_secret("Access_key_ID"),
             aws_secret_access_key = get_secret("Secret_access_key"),
         )
-        file_key = uuid + ".jpg"
+        file_key = image_uuid + ".jpg"
         s3_client.put_object(Body=file, Bucket=get_secret("AWS_BUCKET_NAME"), Key=file_key)
         # 업로드된 파일의 URL을 구성
         url = get_secret("FILE_URL") + "/" + file_key
@@ -194,10 +225,13 @@ class WritePage(WebsocketConsumer):
         ):
             # print(response)
             # 각 응답 조각 처리
-            message = response.choices[0].delta["content"]
-            if message:
-                #클라이언트에게 실시간으로 메세지 전송
+            if 'delta' in response.choices[0] and 'content' in response.choices[0].delta:
+                message = response.choices[0].delta["content"]
+                # 클라이언트에게 실시간으로 메세지 전송
                 self.send(text_data=json.dumps({"message": message}))
+            else:
+                # 'delta' 또는 'content' 키가 없는 경우에 대한 처리 추가
+                print("Invalid response format: {}".format(response))
         # if 초기 생성 -> 초기 값을 서버가 받음 (n번 페이지) = 0 <start>
             # data json 형태니까 나눌 수 있겠지
             # 나이 성별 이름 동화 등을 가지고 gpt 함수를 부를거야
