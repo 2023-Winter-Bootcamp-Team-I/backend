@@ -3,43 +3,48 @@ from book.models import Book
 from page.models import Page
 
 
+# 동화책 정보 직렬화
 class BookSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
         fields = ['user_id', 'username', 'fairytale', 'gender', 'age']
 
 
+# 동화책 정보 직렬화
 class BookCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
         fields = ['book_id', 'username', 'fairytale', 'gender', 'age']
 
 
-class ContentSerializer(serializers.ModelSerializer):
+# 페이지 내용을 직렬화
+class PageContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Page
         fields = ['book_id', 'page_num', 'ko_content', 'en_content']
 
 
-class ContentChoiceSerializer(serializers.ModelSerializer):
+# 페이지 내용을 선택할 때 직렬화
+class PageContentChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Page
         fields = ['page_id', 'book_id', 'page_num', 'ko_content', 'en_content']
 
 
-class TitleCreateSerializer(serializers.ModelSerializer):
+class BookTitleCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
         fields = ['book_id', 'title']
 
 
-# 동화책 전체 리스트 불러오기 api
+# 동화책 전체 리스트 불러오기
 class UserBookSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
         fields = ['user_id']
 
 
+# 사용자의 동화책 리스트를 가져오기
 class UserBookListSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
 
@@ -61,12 +66,7 @@ class DeleteBookSerializer(serializers.Serializer):
         fields = ['book_id']
 
 
-class CallTextImageSerializer(serializers.Serializer):
-    class Meta:
-        model = Book
-        fields = ['book_id']
-
-
+# 이메일로 동화책 공유
 class EmailBookShareSerializer(serializers.Serializer):
     to = serializers.EmailField()
     book_id = serializers.IntegerField()

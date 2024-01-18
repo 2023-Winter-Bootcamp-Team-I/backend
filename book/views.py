@@ -10,15 +10,16 @@ from rest_framework.views import APIView
 from page.models import Page
 from user.models import User
 from book.models import Book
-from book.serializers import BookSerializer, BookCreateSerializer, ContentSerializer, ContentChoiceSerializer, \
-    TitleCreateSerializer, UserBookListSerializer, DeleteBookSerializer, EmailBookShareSerializer
+from book.serializers import BookSerializer, BookCreateSerializer, PageContentSerializer, PageContentChoiceSerializer, \
+    BookTitleCreateSerializer, UserBookListSerializer, DeleteBookSerializer, EmailBookShareSerializer
 
 
-# 동화책 초기 정보 불러오기
+# 동화책 초기 정보 불러오거나 생성
 class BaseBook(APIView):
     @swagger_auto_schema(request_body=BookSerializer,
                          responses={201: BookCreateSerializer})
     def post(self, request):
+        # 입력된 동화책 정보를 직렬화하고 저장
         serializer = BookSerializer(data=request.data)
         if serializer.is_valid():
             book_instance = serializer.save()
@@ -36,9 +37,10 @@ class BaseBook(APIView):
         openapi.Parameter('user_id', openapi.IN_QUERY, description='사용자 ID', type=openapi.TYPE_INTEGER)
     ], responses={200: UserBookListSerializer})
     def get(self, request):
+        # 사용자가 소유한 동화책 리스트를 조회
         user_id = request.query_params.get('user_id')
         if user_id is not None:
-            # 사용자 존재 유무 파악
+            # 사용자 존재 여부 파악
             get_object_or_404(User, pk=user_id)
             books = Book.objects.filter(user_id=user_id, is_deleted=None)
             response_serializer = UserBookListSerializer(books, many=True)
@@ -50,13 +52,14 @@ class BaseBook(APIView):
 
 # 동화책 글 선택
 class ChoiceContent(APIView):
-    @swagger_auto_schema(request_body=ContentSerializer,
-                         responses={200: ContentChoiceSerializer})
+    @swagger_auto_schema(request_body=PageContentSerializer,
+                         responses={200: PageContentChoiceSerializer})
     def post(self, request):
-        serializer = ContentSerializer(data=request.data)
+        # 선택된 페이지의 내용을 직렬화하고 저장
+        serializer = PageContentSerializer(data=request.data)
         if serializer.is_valid():
             book_instance = serializer.save()
-            response_serializer = ContentChoiceSerializer(book_instance)
+            response_serializer = PageContentChoiceSerializer(book_instance)
             return Response({
                 'message': '글 선택 완료',
                 'result': response_serializer.data
@@ -68,12 +71,13 @@ class ChoiceContent(APIView):
 
 
 class BookDetail(APIView):
-    # 동화책 제목 작성
-    @swagger_auto_schema(request_body=TitleCreateSerializer,
-                         responses={200: TitleCreateSerializer})
+    # 동화책 제목 생성
+    @swagger_auto_schema(request_body=BookTitleCreateSerializer,
+                         responses={200: BookTitleCreateSerializer})
     def put(self, request, pk):
+        # 동화책 제목 생성
         book = get_object_or_404(Book, pk=pk)
-        serializer = TitleCreateSerializer(book, data=request.data)
+        serializer = BookTitleCreateSerializer(book, data=request.data)
 
         if serializer.is_valid():
             #  serializer.validated_data['user_id'] = request.user.id
@@ -93,20 +97,20 @@ class BookDetail(APIView):
     # 동화책 글+그림 불러오기
     @swagger_auto_schema(manual_parameters=[
         openapi.Parameter('id', openapi.IN_PATH, description='책 ID', type=openapi.TYPE_INTEGER)
-    ], responses={200: ContentChoiceSerializer})
+    ], responses={200: PageContentChoiceSerializer})
     def get(self, pk):
         # book_id를 기반으로 페이지들을 불러옴
         book = get_object_or_404(Book, pk=pk, is_deleted=None)
         pages = Page.objects.filter(book_id=pk).order_by('page_num')
 
-        # 각 page의 내용과 이미지 url을 리스트에 저장
+        # 각 페이지의 내용과 이미지 url을 리스트에 저장
         content_list = []
         for page in pages:
             content_data = {
                 'page_num': page.page_num,
                 'ko_content': page.ko_content,
                 'en_content': page.en_content,
-                # 이미지 선택 안할시 기본이미지 url 반환
+                # 이미지 선택 안할시 기본 이미지 url 반환
                 'image_url': page.image_url.url if page.image_url else 'https://bookg-s3-bucket.s3.ap-northeast-2.amazonaws.com/UUID.png',
                 'created_at': page.created_at,
                 'update_at': page.updated_at
@@ -125,10 +129,10 @@ class BookDetail(APIView):
     @swagger_auto_schema(responses={200: DeleteBookSerializer})
     def delete(self, pk):
         try:
-            # 동화책 있니 없니
+            # 동화책 존재 여부 확인 후 삭제
             book_instance = get_object_or_404(Book, pk=pk)
 
-            # is_deleted 필드를 현재시간으로 설정 + 삭제(소프트딜리트)
+            # is_deleted 필드를 현재시간으로 설정(소프트딜리트)
             book_instance.is_deleted = datetime.now()
             book_instance.save()
 
@@ -144,6 +148,7 @@ class BookDetail(APIView):
 class EmailBookShare(APIView):
     @swagger_auto_schema(query_serializer=EmailBookShareSerializer)
     def get(self, request):
+        # 이메일을 통해 동화책 공유
         serializer = EmailBookShareSerializer(data=request.query_params)
         if serializer.is_valid():
             take = serializer.validated_data['to']           # 받는 사람
