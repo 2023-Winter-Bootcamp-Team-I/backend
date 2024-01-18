@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     'page',
     'drf_yasg',
     'channels',
+    'django_celery_beat',
+    'django_celery_results'
 ]
 
 ASGI_APPLICATION = "backend.asgi.application"
@@ -180,3 +182,11 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = 'kjy154969@naver.com'
 EMAIL_HOST_PASSWORD = get_secret("JIN_YONG_NAVER")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# Celery
+CELERY_BROKER_URL = 'amqp://guest:guest@rabbitmq:5672//'  # 로컬 테스트용
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'

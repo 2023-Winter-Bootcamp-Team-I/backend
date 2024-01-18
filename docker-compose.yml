@@ -1,14 +1,22 @@
 version: '3'
+
 services:
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    restart: always
+
   db:
     image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: test
     ports:
-      -  "3306:3306"
+      - "3306:3306"
     healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       retries: 5
       timeout: 5s
@@ -16,12 +24,32 @@ services:
   web:
     build: .
     depends_on:
-      db:
-        condition: service_healthy
+      - db
+      - rabbitmq
     ports:
       - "8000:8000"
     volumes:
       - .:/app
     restart: always
     environment:
-      WAIT_HOSTS: db:3306
+      WAIT_HOSTS: db:3306, rabbitmq:5672
+
+  celery_worker:
+    build: .
+    command: celery -A backend worker --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - web
+      - rabbitmq
+    restart: always
+
+  celery_beat:
+    build: .
+    command: celery -A backend beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - .:/app
+    depends_on:
+      - web
+      - rabbitmq
+    restart: always
