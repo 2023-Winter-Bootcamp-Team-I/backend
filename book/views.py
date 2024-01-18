@@ -74,7 +74,7 @@ class BookDetail(APIView):
     # 동화책 제목 생성
     @swagger_auto_schema(request_body=BookTitleCreateSerializer,
                          responses={200: BookTitleCreateSerializer})
-    def put(self, request, pk):
+    def put(self, request, pk, *args, **kwargs):
         # 동화책 제목 생성
         book = get_object_or_404(Book, pk=pk)
         serializer = BookTitleCreateSerializer(book, data=request.data)
@@ -98,7 +98,7 @@ class BookDetail(APIView):
     @swagger_auto_schema(manual_parameters=[
         openapi.Parameter('id', openapi.IN_PATH, description='책 ID', type=openapi.TYPE_INTEGER)
     ], responses={200: PageContentChoiceSerializer})
-    def get(self, pk):
+    def get(self, request, pk, *args, **kwargs):
         # book_id를 기반으로 페이지들을 불러옴
         book = get_object_or_404(Book, pk=pk, is_deleted=None)
         pages = Page.objects.filter(book_id=pk).order_by('page_num')
@@ -127,7 +127,7 @@ class BookDetail(APIView):
 
     # 동화책 삭제
     @swagger_auto_schema(responses={200: DeleteBookSerializer})
-    def delete(self, pk):
+    def delete(self, request, pk, *args, **kwargs):
         try:
             # 동화책 존재 여부 확인 후 삭제
             book_instance = get_object_or_404(Book, pk=pk)
