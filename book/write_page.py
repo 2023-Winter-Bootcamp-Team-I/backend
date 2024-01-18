@@ -22,6 +22,7 @@ class WritePage(WebsocketConsumer):
         self.book_content_ko = []
         self.book_content_en = []
         self.conversation = []
+        self.book_id = None
 # ---------------------------------------------------------------------- 소켓 통신 연결 해제
     def disconnect(self, closed_code):
         # 만약에 중간에 끊킨 경우, book_id와 관련된 것 전부 삭제
