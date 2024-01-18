@@ -55,7 +55,7 @@ class UserBookListSerializer(serializers.ModelSerializer):
     def get_image_url(self, obj):
         # 가장 최근의 페이지를 가져오고, 해당 페이지의 이미지 URL 반환
         page = Page.objects.filter(book_id=obj.book_id).order_by('-created_at').first()
-        return page.image_url.url if page else None
+        return page.image_url.url if page and page.image_url else 'https://bookg-s3-bucket.s3.ap-northeast-2.amazonaws.com/UUID.png'
 
 
 class DeleteBookSerializer(serializers.Serializer):
