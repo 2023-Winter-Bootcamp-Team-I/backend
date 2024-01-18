@@ -66,6 +66,7 @@ class CallTextImageSerializer(serializers.Serializer):
         model = Book
         fields = ['book_id']
 
+
 class EmailBookShareSerializer(serializers.Serializer):
     to = serializers.EmailField()
     book_id = serializers.IntegerField()

@@ -1,7 +1,7 @@
 from django.core.mail import EmailMessage
 from django.http import Http404
 from datetime import datetime
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import get_object_or_404
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
@@ -38,9 +38,9 @@ class BaseBook(APIView):
     def get(self, request):
         user_id = request.query_params.get('user_id')
         if user_id is not None:
-            # 사용자가 존재 하느냐!!
+            # 사용자 존재 유무 파악
             get_object_or_404(User, pk=user_id)
-            books = Book.objects.filter(user_id=user_id, is_deleted=None)  # 수정된 부분입니다
+            books = Book.objects.filter(user_id=user_id, is_deleted=None)
             response_serializer = UserBookListSerializer(books, many=True)
             return Response({
                 'result': response_serializer.data
@@ -71,7 +71,7 @@ class BookDetail(APIView):
     # 동화책 제목 작성
     @swagger_auto_schema(request_body=TitleCreateSerializer,
                          responses={200: TitleCreateSerializer})
-    def put(self, request, pk, *args, **kwargs):
+    def put(self, request, pk):
         book = get_object_or_404(Book, pk=pk)
         serializer = TitleCreateSerializer(book, data=request.data)
 
@@ -94,16 +94,19 @@ class BookDetail(APIView):
     @swagger_auto_schema(manual_parameters=[
         openapi.Parameter('id', openapi.IN_PATH, description='책 ID', type=openapi.TYPE_INTEGER)
     ], responses={200: ContentChoiceSerializer})
-    def get(self, request, pk, *args, **kwargs):
+    def get(self, pk):
+        # book_id를 기반으로 페이지들을 불러옴
         book = get_object_or_404(Book, pk=pk, is_deleted=None)
         pages = Page.objects.filter(book_id=pk).order_by('page_num')
 
+        # 각 page의 내용과 이미지 url을 리스트에 저장
         content_list = []
         for page in pages:
             content_data = {
                 'page_num': page.page_num,
                 'ko_content': page.ko_content,
                 'en_content': page.en_content,
+                # 이미지 선택 안할시 기본이미지 url 반환
                 'image_url': page.image_url.url if page.image_url else 'https://bookg-s3-bucket.s3.ap-northeast-2.amazonaws.com/UUID.png',
                 'created_at': page.created_at,
                 'update_at': page.updated_at
@@ -120,12 +123,12 @@ class BookDetail(APIView):
 
     # 동화책 삭제
     @swagger_auto_schema(responses={200: DeleteBookSerializer})
-    def delete(self, request, pk, *args, **kwargs):
+    def delete(self, pk):
         try:
             # 동화책 있니 없니
             book_instance = get_object_or_404(Book, pk=pk)
 
-            # is_deleted 필드를 현재시간으로 설정 + 삭제
+            # is_deleted 필드를 현재시간으로 설정 + 삭제(소프트딜리트)
             book_instance.is_deleted = datetime.now()
             book_instance.save()
 
@@ -147,14 +150,14 @@ class EmailBookShare(APIView):
             book_id = serializer.validated_data['book_id']
 
             url = "http://bookg/api/v1/books/"
-            urlDetail = url + f"{book_id}"
-            subject = "소중한 책 선물"              # 메일의 제목
-            from_email = "kjy154969@naver.com"  # 보내는 사람
-            message = f"{urlDetail} 을 통해 공유 된 책을 감상할 수 있어요!"
+            url_detail = url + f"{book_id}"
+            subject = "소중한 책 선물"                         # 메일 제목
+            from_email = "kjy154969@naver.com"               # 보내는 사람
+            message = f"{url_detail} 을 통해 공유 된 책을 감상할 수 있어요!"
             EmailMessage(subject=subject, body=message, to=[take], from_email=from_email).send()
             return Response({"message": "이메일 보내기 성공",
                              "result": {
-                                 "share_email": f"{urlDetail}",
+                                 "share_email": f"{url_detail}",
                                  "book_id": book_id
                              }})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
