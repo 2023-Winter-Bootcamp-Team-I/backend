@@ -4,6 +4,10 @@ import openai
 import requests
 from botocore.exceptions import NoCredentialsError
 from channels.generic.websocket import WebsocketConsumer
+from django.db import IntegrityError
+from pip._internal.operations.prepare import get_file_url
+
+from book.models import Book
 from page.models import Page
 from backend.settings import get_secret
 import uuid
@@ -42,10 +46,29 @@ class WritePage(WebsocketConsumer):
         page_num = text_data_json.get('pageCnt')
         if text_data_json['type'] == 'start':
             user_info = self.extract_user_info(text_data_json)
+
+            try:
+                book = Book(
+                    user_id=text_data_json['userId'],
+                    username=text_data_json['username'],
+                    fairytale=text_data_json['fairytale'],
+                    gender=text_data_json['gender'],
+                    age=text_data_json['age']
+                )
+                book.save()
+
+            except KeyError as e:
+                #text_data_json에서 필요한 키가 누락된 경우
+                print(f"Missing key in text_data_json: {e}")
+
+            except IntegrityError as e:
+                print(f"Database Integrity Error: {e}")
+
             self.generate_start_gpt_responses(user_info) # 시작
             # 페이지 번호 증가 및 응답 반환
             page_num += 1
             self.send_response_to_client(page_num)
+
         elif text_data_json['type'] == 'ing':
             # 책 내용 가져온거 처리하기
             choice = text_data_json.get('choice')
@@ -54,7 +77,7 @@ class WritePage(WebsocketConsumer):
             en_content = text_data_json.get('enContent')
             image_uuid = str(uuid.uuid4()) # db에 uuid 넣은 이미지 저장
             self.save_story_to_db(image_uuid, page_num, ko_content, en_content)
-            image = self.generate_dalle_image(image_uuid,enContent) # 비동기 함수 ??
+            image = self.generate_dalle_image(image_uuid, en_content) # 비동기 함수 ??
 
             # 6번째 페이지 처리
             if page_num == 6:
@@ -71,7 +94,7 @@ class WritePage(WebsocketConsumer):
             en_content = text_data_json.get('enContent')
             image_uuid = str(uuid.uuid4())
             self.save_story_to_db(image_uuid, page_num, ko_content, en_content)
-            image = self.generate_dalle_image(image_uuid,enContent) # 리턴 값이 url임 -> 나중에 비동기
+            image = self.generate_dalle_image(image_uuid, en_content) # 리턴 값이 url임 -> 나중에 비동기
           
             #print(image)
 ######################## 함수들 ########################
@@ -152,6 +175,7 @@ class WritePage(WebsocketConsumer):
 
     # 달리 이미지 생성
     def generate_dalle_image(self, image_uuid ,enContent, boto3=None):
+        openai.api_key = get_secret("GPT_KEY")
         response = openai.Image.create(
             prompt=[{
                     "role": "system",
