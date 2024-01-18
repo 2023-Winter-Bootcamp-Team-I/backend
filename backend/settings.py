@@ -5,7 +5,7 @@ from django.core.exceptions import ImproperlyConfigured
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-#BASE_DIR = Path(__file__).resolve().parent.parent
+# BASE_DIR = Path(__file__).resolve().parent.parent
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -13,12 +13,15 @@ secret_file = os.path.join(BASE_DIR, 'secrets.json')
 
 with open(secret_file) as f:
     secrets = json.loads(f.read())
+
+
 def get_secret(setting, secrets=secrets):
     try:
         return secrets[setting]
     except KeyError:
         error_msg = "Set the {} environment variable".format(setting)
         raise ImproperlyConfigured(error_msg)
+
 
 SECRET_KEY = get_secret("django_SECRET_KEY")
 # Quick-start development settings - unsuitable for production
@@ -28,7 +31,6 @@ SECRET_KEY = get_secret("django_SECRET_KEY")
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
-
 
 # Application definition
 
@@ -63,15 +65,15 @@ MIDDLEWARE = [
 ]
 
 ##CORS
-CORS_ORIGIN_ALLOW_ALL=True # <- 모든 호스트 허용
-CORS_ALLOW_CREDENTIALS = True # <-쿠키가 cross-site HTTP 요청에 포함될 수 있다
+CORS_ORIGIN_ALLOW_ALL = True  # <- 모든 호스트 허용
+CORS_ALLOW_CREDENTIALS = True  # <-쿠키가 cross-site HTTP 요청에 포함될 수 있다
 # CORS_ALLOW_WHITELIST = [
 #     'bookgbookg.com',
 #     'localhost:8000'
 # ]
 
 
-CORS_ALLOW_METHODS = (  #<-실제 요청에 허용되는 HTTP 동사 리스트
+CORS_ALLOW_METHODS = (  # <-실제 요청에 허용되는 HTTP 동사 리스트
     'DELETE',
     'GET',
     'OPTIONS',
@@ -80,7 +82,7 @@ CORS_ALLOW_METHODS = (  #<-실제 요청에 허용되는 HTTP 동사 리스트
     'PUT',
 )
 
-CORS_ALLOW_HEADERS = ( #<-실제 요청을 할 때 사용될 수 있는 non-standard HTTP 헤더 목록// 현재 기본값
+CORS_ALLOW_HEADERS = (  # <-실제 요청을 할 때 사용될 수 있는 non-standard HTTP 헤더 목록// 현재 기본값
     'accept',
     'accept-encoding',
     'authorization',
@@ -92,14 +94,12 @@ CORS_ALLOW_HEADERS = ( #<-실제 요청을 할 때 사용될 수 있는 non-stan
     'x-requested-with',
 )
 
-APPEND_SLASH = False #<- / 관련 에러 제거
+APPEND_SLASH = False  # <- / 관련 에러 제거
 
 STATIC_URL = '/static/'
-#실제 경로 아닌 파일이 접근 할 수 있게 url 주기 위한 기본적인 베이스
+# 실제 경로 아닌 파일이 접근 할 수 있게 url 주기 위한 기본적인 베이스
 
 ROOT_URLCONF = 'backend.urls'
-
-
 
 TEMPLATES = [
     {
@@ -119,7 +119,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
@@ -133,7 +132,6 @@ DATABASES = {
         'PORT': '3306'
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -153,7 +151,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
@@ -165,7 +162,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
@@ -175,7 +171,6 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 
 # 이메일 보내기
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

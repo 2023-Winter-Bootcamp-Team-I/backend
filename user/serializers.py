@@ -3,12 +3,13 @@ from .models import User
 
 
 # 회원가입
-class UserSerializer(serializers.ModelSerializer):
+class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['user_id', 'email', 'password', 'name',]
 
 
-class UserLoginSerializer(serializers.Serializer):  # 로그인
+# 로그인
+class UserLoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)

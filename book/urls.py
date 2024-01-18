@@ -1,4 +1,4 @@
-from django.urls import path, include
+from django.urls import path
 
 from backend.urls import schema_view
 from .views import (
