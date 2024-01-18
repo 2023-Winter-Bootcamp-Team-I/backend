@@ -25,7 +25,7 @@ class WritePage(WebsocketConsumer):
 # ---------------------------------------------------------------------- 소켓 통신 연결 해제
     def disconnect(self, closed_code):
         # 만약에 중간에 끊킨 경우, book_id와 관련된 것 전부 삭제
-        book_object = Page.objects.get(id=self.book_id)
+        book_object = Book.objects.get(id=self.book_id)
         pages = Page.objects.filter(book_id=book_object)
         page_num = pages.count()
         # 가져온 페이지의 수와 예상 페이지 수가 다르면 삭제
@@ -49,7 +49,6 @@ class WritePage(WebsocketConsumer):
 
             try:
                 book = Book(
-                    user_id=text_data_json['userId'],
                     username=text_data_json['username'],
                     fairytale=text_data_json['fairytale'],
                     gender=text_data_json['gender'],
