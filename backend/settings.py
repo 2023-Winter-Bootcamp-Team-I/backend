@@ -189,7 +189,8 @@ EMAIL_HOST_PASSWORD = get_secret("JIN_YONG_NAVER")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Celery
-CELERY_BROKER_URL = 'amqp://localhost'  # 로컬 테스트용
+CELERY_BROKER_URL = 'pyamqp://guest:guest@localhost:5672//'  # 로컬 테스트용
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
