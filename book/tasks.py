@@ -23,7 +23,9 @@ def generate_dalle_image_async(image_uuid, enContent):
             n=1,
             size="1024x1024"
         )
+        # 여기 에러 위험 있어요..
         imageUrl = response['data'][0]['url']
+        #print(imageUrl)
         image_data = requests.get(imageUrl).content
         return upload_to_s3(image_uuid, image_data)
     except Exception as e:
