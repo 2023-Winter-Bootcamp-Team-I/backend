@@ -193,10 +193,14 @@ class WritePage(WebsocketConsumer):
     # -------------------------------------------------------------------- db 넣는 함수들
     # db에 page 저장
 
-    def save_story_to_db(self, image_uuid, page_num, ko_content, en_content):
-        imageUrl = get_secret("FILE_URL") + "/" + image_uuid + ".jpg"
-        Page.objects.create(book_id=self.book_id, image_url=imageUrl, page_num=page_num, ko_content=ko_content,
-                            en_content=en_content)
+    def save_story_to_db(self,image_uuid, page_num, ko_content, en_content):
+        try:
+            book = Book.objects.get(book_id=self.book_id)
+            imageUrl = get_secret("FILE_URL") + "/" + image_uuid + ".jpg"
+            Page.objects.create(book_id_id=book.book_id, image_url=imageUrl, page_num=page_num, ko_content=ko_content,
+                                en_content=en_content)
+        except Book.DoesNotExist:
+            print(f"Book with id {self.book_id} does not exist.")
 
     def save_book_to_db(self,user_id, username, fairytale, gender, age):
          return Book.objects.create(user_id=user_id, fairytale=fairytale, username=username, gender=gender,age=age)
