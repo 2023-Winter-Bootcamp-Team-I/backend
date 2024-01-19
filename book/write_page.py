@@ -81,6 +81,7 @@ class WritePage(WebsocketConsumer):
 
             ko_content = text_data_json.get('koContent')
             en_content = text_data_json.get('enContent')
+
             image_uuid = str(uuid.uuid4())  # db에 uuid 넣은 이미지 저장
             self.save_story_to_db(self.book_id, image_uuid, page_num, ko_content, en_content)
 
@@ -101,6 +102,7 @@ class WritePage(WebsocketConsumer):
             ko_content = text_data_json.get('koContent')
             en_content = text_data_json.get('enContent')
             image_uuid = str(uuid.uuid4())
+
             self.save_story_to_db(self.book_id, image_uuid, page_num, ko_content, en_content)
 
             # 비동기로 해주었음 tasks.py ㄱ
