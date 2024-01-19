@@ -59,7 +59,7 @@ class WritePage(WebsocketConsumer):
                 gender=text_data_json['gender']
                 age=int(text_data_json['age'])
 
-                self.save_book_to_db(user_id,username,fairytale,gender,age)
+                book = self.save_book_to_db(user_id,username,fairytale,gender,age)
 
                 self.book_id = book.book_id
                 #print(self.book_id)
@@ -194,7 +194,7 @@ class WritePage(WebsocketConsumer):
                             en_content=en_content)
 
     def save_book_to_db(self,user_id, username, fairyfale, gender, age):
-        Book.objects.create(user_id=user_id, fairyfale=fairyfale, username=username, gender=gender,age=age)
+         return Book.objects.create(user_id=user_id, fairyfale=fairyfale, username=username, gender=gender,age=age)
 
     # # 달리 이미지 생성
     # def generate_dalle_image(self, image_uuid, enContent):
