@@ -184,7 +184,7 @@ class WritePage(WebsocketConsumer):
     # -------------------------------------------------------------------- db 넣는 함수들
     # db에 page 저장
 
-    def save_story_to_db(self, image_uuid, page_num, ko_content, en_content):
+    def save_story_to_db(self, book_id, image_uuid, page_num, ko_content, en_content):
         imageUrl = get_secret("FILE_URL") + "/" + image_uuid + ".jpg"
         Page.objects.create(book_id=self.book_id, image_url=imageUrl, page_num=page_num, ko_content=ko_content,
                             en_content=en_content)
