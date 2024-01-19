@@ -54,14 +54,16 @@ class WritePage(WebsocketConsumer):
 
             try:
                 book = Book(
-                    username=text_data_json['username'],
-                    fairytale=text_data_json['fairytale'],
+                    user_id = text_data_json['userId'],
+                    username=text_data_json['userName'],
+                    fairytale=text_data_json['fairyTale'],
                     gender=text_data_json['gender'],
-                    age=text_data_json['age']
+                    age=int(text_data_json['age'])
                 )
                 book.save()
 
                 self.book_id = book.book_id
+                #print(self.book_id)
 
             except KeyError as e:
                 # text_data_json에서 필요한 키가 누락된 경우
@@ -83,7 +85,7 @@ class WritePage(WebsocketConsumer):
             en_content = text_data_json.get('enContent')
 
             image_uuid = str(uuid.uuid4())  # db에 uuid 넣은 이미지 저장
-            self.save_story_to_db(self.book_id, image_uuid, page_num, ko_content, en_content)
+            self.save_story_to_db(image_uuid, page_num, ko_content, en_content)
 
             # 비동기로 해주었음 tasks.py ㄱ
             image = generate_dalle_image_async.delay(image_uuid, en_content)  # 비동기 함수 ??
@@ -103,7 +105,7 @@ class WritePage(WebsocketConsumer):
             en_content = text_data_json.get('enContent')
             image_uuid = str(uuid.uuid4())
 
-            self.save_story_to_db(self.book_id, image_uuid, page_num, ko_content, en_content)
+            self.save_story_to_db(image_uuid, page_num, ko_content, en_content)
 
             # 비동기로 해주었음 tasks.py ㄱ
             image = generate_dalle_image_async.delay(image_uuid, en_content)  # 리턴 값이 url임 -> 나중에 비동기
@@ -115,6 +117,7 @@ class WritePage(WebsocketConsumer):
     # 자 이거 api 명세서에 유림님이 적어주신 카멜케이스 변수명 대로 수정 부탁드려요 (저는 하다가 말았어요~)
     def extract_user_info(self, data):
         user_info = {
+            'userId' : data.get('userId'),
             'userName': data.get('userName'),
             'gender': data.get('gender'),
             'age': data.get('age'),
