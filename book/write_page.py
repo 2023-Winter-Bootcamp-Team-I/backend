@@ -109,6 +109,8 @@ class WritePage(WebsocketConsumer):
             # 비동기로 해주었음 tasks.py ㄱ
             image = generate_dalle_image_async.delay(image_uuid, en_content)  # 리턴 값이 url임 -> 나중에 비동기
 
+            self.send(text_data=json.dumps({"bookId": self.book_id}))
+
             print(image)
 
     ######################## 함수들 ########################
