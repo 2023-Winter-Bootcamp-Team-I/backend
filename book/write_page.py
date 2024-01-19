@@ -53,14 +53,13 @@ class WritePage(WebsocketConsumer):
             user_info = self.extract_user_info(text_data_json)
 
             try:
-                book = Book(
-                    user_id = text_data_json['userId'],
-                    username=text_data_json['userName'],
-                    fairytale=text_data_json['fairyTale'],
-                    gender=text_data_json['gender'],
-                    age=int(text_data_json['age'])
-                )
-                book.save()
+                user_id = text_data_json['userId']
+                username=text_data_json['userName']
+                fairytale=text_data_json['fairyTale']
+                gender=text_data_json['gender']
+                age=int(text_data_json['age'])
+
+                self.save_book_to_db(user_id,username,fairytale,gender,age)
 
                 self.book_id = book.book_id
                 #print(self.book_id)
@@ -193,6 +192,9 @@ class WritePage(WebsocketConsumer):
         imageUrl = get_secret("FILE_URL") + "/" + image_uuid + ".jpg"
         Page.objects.create(book_id=self.book_id, image_url=imageUrl, page_num=page_num, ko_content=ko_content,
                             en_content=en_content)
+
+    def save_book_to_db(self,user_id, username, fairyfale, gender, age):
+        Book.objects.create(user_id=user_id, fairyfale=fairyfale, username=username, gender=gender,age=age)
 
     # # 달리 이미지 생성
     # def generate_dalle_image(self, image_uuid, enContent):
