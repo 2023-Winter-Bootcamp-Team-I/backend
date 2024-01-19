@@ -198,8 +198,8 @@ class WritePage(WebsocketConsumer):
         Page.objects.create(book_id=self.book_id, image_url=imageUrl, page_num=page_num, ko_content=ko_content,
                             en_content=en_content)
 
-    def save_book_to_db(self,user_id, username, fairyfale, gender, age):
-         return Book.objects.create(user_id=user_id, fairyfale=fairyfale, username=username, gender=gender,age=age)
+    def save_book_to_db(self,user_id, username, fairytale, gender, age):
+         return Book.objects.create(user_id=user_id, fairytale=fairytale, username=username, gender=gender,age=age)
 
     # # 달리 이미지 생성
     # def generate_dalle_image(self, image_uuid, enContent):
