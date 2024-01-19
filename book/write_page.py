@@ -10,6 +10,7 @@ from .tasks import generate_dalle_image_async  # tasks.py 에서 정의한 함�
 
 from book.models import Book
 from page.models import Page
+from user.models import User
 from backend.settings import get_secret
 import uuid
 
@@ -54,12 +55,14 @@ class WritePage(WebsocketConsumer):
 
             try:
                 user_id = text_data_json['userId']
-                username=text_data_json['userName']
-                fairytale=text_data_json['fairyTale']
-                gender=text_data_json['gender']
-                age=int(text_data_json['age'])
+                username = text_data_json['userName']
+                fairytale = text_data_json['fairyTale']
+                gender = text_data_json['gender']
+                age = int(text_data_json['age'])
 
-                book = self.save_book_to_db(user_id,username,fairytale,gender,age)
+                # 수정된 부분: user_id를 사용하여 User 모델의 인스턴스를 가져와서 할당
+                user_instance = User.objects.get(user_id=user_id)
+                book = self.save_book_to_db(user_instance,username,fairytale,gender,age)
 
                 self.book_id = book.book_id
                 #print(self.book_id)
