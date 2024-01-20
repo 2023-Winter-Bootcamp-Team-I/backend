@@ -1,6 +1,6 @@
-version: '3'
+version: '3' # 파일 규격 버전
 
-services:
+services: # 이 항목 밑에 실행하려는 컨테이너 들을 정의
   rabbitmq:
     image: "rabbitmq:3-management"
     ports:
@@ -53,3 +53,21 @@ services:
       - web
       - rabbitmq
     restart: always
+
+  # 추가한 부분
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus:/etc/prometheus
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    volumes:
+      - ./grafana:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
