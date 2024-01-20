@@ -62,7 +62,7 @@ class WritePage(WebsocketConsumer):
 
                 # 수정된 부분: user_id를 사용하여 User 모델의 인스턴스를 가져와서 할당
                 user_instance = User.objects.get(user_id=user_id)
-                book = self.save_book_to_db(user_instance,username,fairytale,gender,age)
+                book = self.save_book_to_db(user_instance, username, fairytale, gender,age)
 
                 self.book_id = book.book_id
                 #print(self.book_id)
@@ -83,7 +83,7 @@ class WritePage(WebsocketConsumer):
             # 책 내용 가져온거 처리하기
             choice = text_data_json.get('choice')
 
-            ko_content = text_data_json.get('koContent')
+            ko_content = text_data_json.get({koContent['content']})
             en_content = text_data_json.get('enContent')
 
             image_uuid = str(uuid.uuid4())  # db에 uuid 넣은 이미지 저장
