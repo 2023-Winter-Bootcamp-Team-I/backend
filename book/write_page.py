@@ -62,7 +62,7 @@ class WritePage(WebsocketConsumer):
 
                 # 수정된 부분: user_id를 사용하여 User 모델의 인스턴스를 가져와서 할당
                 user_instance = User.objects.get(user_id=user_id)
-                book = self.save_book_to_db(user_instance,username,fairytale,gender,age)
+                book = self.save_book_to_db(user_instance, username, fairytale, gender,age)
 
                 self.book_id = book.book_id
                 #print(self.book_id)
@@ -87,10 +87,10 @@ class WritePage(WebsocketConsumer):
             en_content = text_data_json.get('enContent')
 
             image_uuid = str(uuid.uuid4())  # db에 uuid 넣은 이미지 저장
-            self.save_story_to_db(image_uuid, page_num, ko_content, en_content)
+            self.save_story_to_db(image_uuid, page_num, ko_content['content'], en_content['content'])
 
             # 비동기로 해주었음 tasks.py ㄱ
-            image = generate_dalle_image_async.delay(image_uuid, en_content)  # 비동기 함수 ??
+            image = generate_dalle_image_async.delay(image_uuid, en_content['content'])  # 비동기 함수 ??
 
             # 6번째 페이지 처리
             if page_num == 6:
@@ -107,10 +107,10 @@ class WritePage(WebsocketConsumer):
             en_content = text_data_json.get('enContent')
             image_uuid = str(uuid.uuid4())
 
-            self.save_story_to_db(image_uuid, page_num, ko_content, en_content)
+            self.save_story_to_db(image_uuid, page_num, ko_content['content'], en_content['content'])
 
             # 비동기로 해주었음 tasks.py ㄱ
-            image = generate_dalle_image_async.delay(image_uuid, en_content)  # 리턴 값이 url임 -> 나중에 비동기
+            image = generate_dalle_image_async.delay(image_uuid, en_content['content'])  # 리턴 값이 url임 -> 나중에 비동기
 
             self.send(text_data=json.dumps({"bookId": self.book_id}))
 
@@ -133,44 +133,59 @@ class WritePage(WebsocketConsumer):
     def generate_start_gpt_responses(self, user_info):
         if user_info['language'] == 'ko':  # 프론트에서.. language로 하기로 했대요..... 그리고 프롬프팅 두개다 변경 부탁 드려요!
             self.conversation = [
-                {
-                    "role": "system",
-                    "content": "당신은 글쓰기가 유창한 어린이 동화 작가입니다. 당신은 각색 또한 잘하는 동화 작가입니다. 당신은 한국어와 영어 모두 능통합니다. 어떤 리액션도 하지마세요. 사용자가 원하는 것에 대해 양식에 맞춰서 글만 써주세요. 20대 여성처럼 친근하게 적어주세요."
-                },
-                {
-                    "role": "user",
-                    "content": f"{user_info['fairyTale']}를 각색해서 {user_info['userName']}가 주인공인 동화를 써주세요. "
-                               f"동화 시작부터 서로 다른 이야기의 내용 2가지를 제시해 주세요. "
-                               f"답변에 따라 이야기가 바뀝니다. "
-                               f"제가 선택을 하기 전까지 기다려 주세요. "
-                               f"선택을 하면, 이야기를 계속 이어나가 주세요. "
-                               f"이 단계를 반복하며, 6번의 전환 후에 이야기를 마무리합니다. "
-                               f"지금 쓰려는 동화의 대상 독자의 성별은 {user_info['gender']}, 연령은 {user_info['age']} 입니다. "
-                               f"언어는 한국어로 먼저 써주세요. "
-                               f"먼저 써준 내용이 한국어라면 다음으로 영어로도 써주세요."
-                               f"(20초 이내로)"
-                }
-            ]
+                                    {
+                                        "role": "system",
+                                        "content": f"당신은 글쓰기가 유창한 어린이 동화 작가입니다. 우리는 같이 하나의 동화를 만들 것입니다. 당신은 한국어와 영어 모두 능통합니다. 어떤 리액션도 하지마세요. 질문은 절대 하지 마세요. 20대 여성처럼 친근하게 적어주세요."
+                                                   f"------<초기 정보>------"
+                                                   f"주인공 이름: {user_info['userName']}"
+                                                   f"주인공 성별: {user_info['gender']}"
+                                                   f"대상 연령: {user_info['age']}세"
+                                                   f"원작 동화: {user_info['fairyTale']}"
+                                                   f"---------------------"
+                                                   f"<초기 정보> 안에 있는 정보들로 동화를 써주세요. "
+                                                   f"2가지의 문장을 제시하는 방식으로 동화를 써주세요. "
+                                                   f" 2개의 문장은 서로 다른 이야기가 되어야 합니다."
+                                                   f"제가 2개 문장 중 하나를 선택하면 다음 페이지로 넘어가세요."
+                                                   f"6페이지를 써주고, 페이지당 1문장의 이야기 구성이 되게 해주세요."
+                                    },{
+                                        "role": "user",
+                                        "content": f"동화를 시작해주세요. 당신은 동화의 이야기가 끝날 때 까지 '--------------' 아래와 같은 방식으로 응답 해주시길 바랍니다"
+                                                   f"---------------------------"
+                                                   f"1.(한국어 내용1)"
+                                                   f"2.(한국어 내용2)"
+                                                   f"1.(영어 내용1)"
+                                                   f"2.(영어 내용2)"
+                                    }
+
+                                ]
         elif user_info['language'] == "en":
             self.conversation = [
-                {
-                    "role": "system",
-                    "content": "당신은 글쓰기가 유창한 어린이 동화 작가입니다. 당신은 각색 또한 잘하는 동화 작가입니다. 당신은 한국어와 영어 모두 능통합니다. 어떤 리액션도 하지마세요. 사용자가 원하는 것에 대해 양식에 맞춰서 글만 써주세요. 20대 여성처럼 친근하게 적어주세요."
-                },
-                {
-                    "role": "user",
-                    "content": f"{user_info['fairyTale']}를 각색해서 {user_info['userName']}가 주인공인 동화를 써주세요. "
-                               f"동화 시작부터 서로 다른 이야기의 내용 2가지를 제시해 주세요. "
-                               f"답변에 따라 이야기가 바뀝니다. "
-                               f"제가 선택을 하기 전까지 기다려 주세요. "
-                               f"선택을 하면, 이야기를 계속 이어나가 주세요. "
-                               f"이 단계를 반복하며, 6번의 전환 후에 이야기를 마무리합니다. "
-                               f"지금 쓰려는 동화의 대상 독자의 성별은 {user_info['gender']}, 연령은 {user_info['age']} 입니다. "
-                               f"언어는 영어로 먼저 써주세요. "
-                               f"먼저 써준 내용이 영어라면 다음으로 한국어로도 써주세요."
-                               f"(20초 이내로)"
-                }
-            ]
+                                    {
+                                        "role": "system",
+                                        "content": f"당신은 글쓰기가 유창한 어린이 동화 작가입니다. 우리는 같이 하나의 동화를 만들 것입니다. 당신은 한국어와 영어 모두 능통합니다. 어떤 리액션도 하지마세요. 질문은 절대 하지 마세요. 20대 여성처럼 친근하게 적어주세요."
+                                                   f"------<초기 정보>------"
+                                                   f"주인공 이름: {user_info['userName']}"
+                                                   f"주인공 성별: {user_info['gender']}"
+                                                   f"대상 연령: {user_info['age']}세"
+                                                   f"원작 동화: {user_info['fairyTale']}"
+                                                   f"---------------------"
+                                                   f"<초기 정보> 안에 있는 정보들로 동화를 써주세요. "
+                                                   f"2가지의 문장을 제시하는 방식으로 동화를 써주세요. "
+                                                   f" 2개의 문장은 서로 다른 이야기가 되어야 합니다."
+                                                   f"제가 2개 문장 중 하나를 선택하면 다음 페이지로 넘어가세요."
+                                                   f"6페이지를 써주고, 페이지당 1문장의 이야기 구성이 되게 해주세요."
+                                    },{
+                                        "role": "user",
+                                        "content": f"동화를 시작해주세요. 당신은 동화의 이야기가 끝날 때 까지 '--------------' 아래와 같은 방식으로 응답 해주시길 바랍니다"
+                                                   f"---------------------------"
+                                                   f"1.(영어 내용1)"
+                                                   f"2.(영어 내용2)"
+                                                   f"1.(한국어 내용1)"
+                                                   f"2.(한국어 내용2)"
+
+                                    }
+
+                                ]
 
     def generate_ing_gpt_responses(self, choice):
         # 지피티씨 호출해서 만들고 반환하기. -> 내가 선택한 이야기로 진행해주고 계속 이어서 두가지로 해줘

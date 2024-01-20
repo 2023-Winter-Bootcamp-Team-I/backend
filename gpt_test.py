@@ -1,5 +1,5 @@
 import openai
-from .backend.settings import get_secret
+from backend.settings import get_secret
 
 openai.api_key = get_secret("GPT_KEY")
 
