@@ -221,38 +221,38 @@ class WritePage(WebsocketConsumer):
          return Book.objects.create(user_id=user_id, fairytale=fairytale, username=username, gender=gender,age=age)
 
     # # 달리 이미지 생성
-    def generate_dalle_image(self, image_uuid, enContent):
-        openai.api_key = get_secret("GPT_KEY")
-        response = openai.Image.create(
-            prompt=f"당신은 유능한 동화 그림 작가입니다. 말 없이 요청하는 사항에 대해서 그림만 그려주세요. {enContent}라는 내용의 그림 하나 만들어주세요.",
-            n=1,
-            size="1024x1024"
-        )
-        # url 추출
-        imageUrl = response['data'][0]['url']
-        # 이미지 다운로드
-        image_data = requests.get(imageUrl).content
-        # S3 클라이언트 생성
-        try:
-            # S3 버킷에 이미지 업로드
-            get_file_url(image_uuid, image_data)
-        except NoCredentialsError:
-            print("AWS credentials not available.")
-            return None
-    # 파일 S3 접근 및 업로드
-    def get_file_url(image_uuid, file):
-        s3_client = boto3.client(
-            's3',
-            aws_access_key_id = get_secret("Access_key_ID"),
-            aws_secret_access_key = get_secret("Secret_access_key"),
-        )
-        file_key = image_uuid + ".jpg"
-        s3_client.put_object(Body=file, Bucket=get_secret("AWS_BUCKET_NAME"), Key=file_key)
-        # 업로드된 파일의 URL을 구성
-        url = get_secret("FILE_URL") + "/" + file_key
-        # URL 문자열에서 공백을 "_"로 대체
-        url = url.replace(" ", "_")
-        return url
+    # def generate_dalle_image(self, image_uuid, enContent):
+    #     openai.api_key = get_secret("GPT_KEY")
+    #     response = openai.Image.create(
+    #         prompt=f"당신은 유능한 동화 그림 작가입니다. 말 없이 요청하는 사항에 대해서 그림만 그려주세요. {enContent}라는 내용의 그림 하나 만들어주세요.",
+    #         n=1,
+    #         size="1024x1024"
+    #     )
+    #     # url 추출
+    #     imageUrl = response['data'][0]['url']
+    #     # 이미지 다운로드
+    #     image_data = requests.get(imageUrl).content
+    #     # S3 클라이언트 생성
+    #     try:
+    #         # S3 버킷에 이미지 업로드
+    #         get_file_url(image_uuid, image_data)
+    #     except NoCredentialsError:
+    #         print("AWS credentials not available.")
+    #         return None
+    # # 파일 S3 접근 및 업로드
+    # def get_file_url(image_uuid, file):
+    #     s3_client = boto3.client(
+    #         's3',
+    #         aws_access_key_id = get_secret("Access_key_ID"),
+    #         aws_secret_access_key = get_secret("Secret_access_key"),
+    #     )
+    #     file_key = image_uuid + ".jpg"
+    #     s3_client.put_object(Body=file, Bucket=get_secret("AWS_BUCKET_NAME"), Key=file_key)
+    #     # 업로드된 파일의 URL을 구성
+    #     url = get_secret("FILE_URL") + "/" + file_key
+    #     # URL 문자열에서 공백을 "_"로 대체
+    #     url = url.replace(" ", "_")
+    #     return url
     # -------------------------------------------------------------------- 응답을 클라이언트한테 전송하는 함수
     def send_response_to_client(self, pageCnt):
         openai.api_key = get_secret("GPT_KEY")
