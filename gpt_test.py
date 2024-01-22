@@ -7,7 +7,7 @@ openai.api_key = get_secret("GPT_KEY")
 conversation = [
     {
         "role": "system",
-        "content": f"당신은 글쓰기가 유창한 어린이 동화 작가입니다. 우리는 같이 하나의 동화를 만들 것입니다. 당신은 한국어와 영어 모두 능통합니다. 어떤 리액션도 하지마세요. 질문은 절대 하지 마세요. 20대 여성처럼 친근하게 적어주세요."
+        "content": f"You are a skilled children's story writer. We will create a fairy tale together. You are fluent in both Korean and English. Do not react at all, and never ask questions. Please write in a friendly manner, like a woman in her twenties."
                    f"------<초기 정보>------"
                    f"주인공 이름: 김진용"
                    f"주인공 성별: 남자"
@@ -34,9 +34,14 @@ conversation = [
 
 while True:
     # 대화를 사용하여 GPT-3 모델에 요청
-    response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=conversation)
+    messages = conversation
+    completion = openai.ChatCompletion.create(
+        model='gpt-3.5-turbo',
+        messages=messages,
+        stream=True)
 
-    assistant_content = response['choices'][0]['message']['content'].strip()
-    # 모델의 응답 확인
-    print(assistant_content)
+    for line in completion:
+        chunk = line['choices'][0].get('delta', {}).get('content', '')
+        if chunk:
+            print(chunk, end='')
     user_content = input("user : ")
