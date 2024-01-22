@@ -13,7 +13,7 @@ def generate_dalle_image_async(image_uuid, enContent):
     try:
         openai.api_key = get_secret("GPT_KEY")
         response = openai.Image.create(
-            prompt=f"당신은 유능한 동화 그림 작가입니다. 말 없이 요청하는 사항에 대해서 그림만 그려주세요. {enContent}라는 내용의 그림 하나 만들어주세요.",
+            prompt=f"Please create a picture with the content '{enContent}'",
             n=1,
             size="1024x1024"
         )
