@@ -35,7 +35,7 @@ class WritePage(WebsocketConsumer):
         page_num = pages.count()
         # 가져온 페이지의 수와 예상 페이지 수가 다르면 삭제
         if page_num != self.page_num:
-            Page.objects.filter(book_id=self.book_id).delete()
+            Book.objects.filter(book_id=self.book_id).delete()
         for pages in pages:
             try:
                 # 해당 페이지의 한국어 내용과 영어 내용을 가져와 출력
@@ -86,6 +86,8 @@ class WritePage(WebsocketConsumer):
             ko_content = text_data_json.get('koContent')
             en_content = text_data_json.get('enContent')
 
+            self.book_content.append(ko_content) # 선택한 내용 저장
+
             image_uuid = str(uuid.uuid4())  # db에 uuid 넣은 이미지 저장
             self.save_story_to_db(image_uuid, page_num, ko_content['content'], en_content['content'])
 
@@ -135,56 +137,45 @@ class WritePage(WebsocketConsumer):
             self.conversation = [
                                     {
                                         "role": "system",
-                                        "content": f"당신은 글쓰기가 유창한 어린이 동화 작가입니다. 우리는 같이 하나의 동화를 만들 것입니다. 당신은 한국어와 영어 모두 능통합니다. 어떤 리액션도 하지마세요. 질문은 절대 하지 마세요. 20대 여성처럼 친근하게 적어주세요."
-                                                   f"------<초기 정보>------"
+                                        "content": f"당신은 동화 작가 역할을 해주었으면 합니다."
+                                                   f"<초기 정보>"
                                                    f"주인공 이름: {user_info['userName']}"
                                                    f"주인공 성별: {user_info['gender']}"
-                                                   f"대상 연령: {user_info['age']}세"
+                                                   f"대상 연령: {user_info['age']}"
                                                    f"원작 동화: {user_info['fairyTale']}"
-                                                   f"---------------------"
-                                                   f"<초기 정보> 안에 있는 정보들로 동화를 써주세요. "
-                                                   f"2가지의 문장을 제시하는 방식으로 동화를 써주세요. "
-                                                   f" 2개의 문장은 서로 다른 이야기가 되어야 합니다."
-                                                   f"제가 2개 문장 중 하나를 선택하면 다음 페이지로 넘어가세요."
-                                                   f"6페이지를 써주고, 페이지당 1문장의 이야기 구성이 되게 해주세요."
-                                    },{
-                                        "role": "user",
-                                        "content": f"동화를 시작해주세요. 당신은 동화의 이야기가 끝날 때 까지 '--------------' 아래와 같은 방식으로 응답 해주시길 바랍니다"
-                                                   f"---------------------------"
-                                                   f"1.(한국어 내용1)"
-                                                   f"2.(한국어 내용2)"
-                                                   f"1.(영어 내용1)"
-                                                   f"2.(영어 내용2)"
+                                                   f"<초기 정보 끝>"
+                                                   f"<초기 정보>를 기반으로, 저에게 두 가지의 서로 다른 이야기의 초반부를 한 문장씩 제시해주세요."
+                                                   f"두 가지의 이야기 중 제가 하나의 이야기를 선택하기 전 까지 기다려주세요."
+                                                   f"제가 선택을 한 후 제가 선택한 이야기에 이어서 저에게 두 가지의 서로 다른 이야기를 한 문장씩 제시해주세요."
+                                                   f"서로 다른 이야기지만, <초기 정보>를 기반으로 해야하는 것은 같습니다."
+                                                   f"다음으로 그 문장들을 영어로도 설명 없이 번역만 해주세요."
+                                                   f"1.korean"
+                                                   f"2.korean"
+                                                   f"1.english"
+                                                   f"2.english",
                                     }
-
                                 ]
         elif user_info['language'] == "en":
             self.conversation = [
                                     {
                                         "role": "system",
-                                        "content": f"당신은 글쓰기가 유창한 어린이 동화 작가입니다. 우리는 같이 하나의 동화를 만들 것입니다. 당신은 한국어와 영어 모두 능통합니다. 어떤 리액션도 하지마세요. 질문은 절대 하지 마세요. 20대 여성처럼 친근하게 적어주세요."
-                                                   f"------<초기 정보>------"
+                                        "content": f"당신은 동화 작가 역할을 해주었으면 합니다."
+                                                   f"<초기 정보>"
                                                    f"주인공 이름: {user_info['userName']}"
                                                    f"주인공 성별: {user_info['gender']}"
-                                                   f"대상 연령: {user_info['age']}세"
+                                                   f"대상 연령: {user_info['age']}"
                                                    f"원작 동화: {user_info['fairyTale']}"
-                                                   f"---------------------"
-                                                   f"<초기 정보> 안에 있는 정보들로 동화를 써주세요. "
-                                                   f"2가지의 문장을 제시하는 방식으로 동화를 써주세요. "
-                                                   f" 2개의 문장은 서로 다른 이야기가 되어야 합니다."
-                                                   f"제가 2개 문장 중 하나를 선택하면 다음 페이지로 넘어가세요."
-                                                   f"6페이지를 써주고, 페이지당 1문장의 이야기 구성이 되게 해주세요."
-                                    },{
-                                        "role": "user",
-                                        "content": f"동화를 시작해주세요. 당신은 동화의 이야기가 끝날 때 까지 '--------------' 아래와 같은 방식으로 응답 해주시길 바랍니다"
-                                                   f"---------------------------"
-                                                   f"1.(영어 내용1)"
-                                                   f"2.(영어 내용2)"
-                                                   f"1.(한국어 내용1)"
-                                                   f"2.(한국어 내용2)"
-
-                                    }
-
+                                                   f"<초기 정보 끝>"
+                                                   f"<초기 정보>를 기반으로, 저에게 두 가지의 서로 다른 이야기의 초반부를 한 문장씩 제시해주세요."
+                                                   f"두 가지의 이야기 중 제가 하나의 이야기를 선택하기 전 까지 기다려주세요."
+                                                   f"제가 선택을 한 후 제가 선택한 이야기에 이어서 저에게 두 가지의 서로 다른 이야기를 한 문장씩 제시해주세요."
+                                                   f"서로 다른 이야기지만, <초기 정보>를 기반으로 해야하는 것은 같습니다."
+                                                   f"다음으로 그 문장들을 영어로도 설명 없이 번역만 해주세요."
+                                                   f"1.english"
+                                                   f"2.english"
+                                                   f"1.korean"
+                                                   f"2.korean"
+                                    },
                                 ]
 
     def generate_ing_gpt_responses(self, choice):
@@ -192,7 +183,19 @@ class WritePage(WebsocketConsumer):
         self.conversation = [
             {
                 "role": "user",
-                "content": f"{choice}번을 고르겠습니다. {choice}번의 이야기에 이어지는 이야기를 이전에 당신의 응답과 같이 제시해주세요(20초 이내로)"
+                "content": f"당신은 동화 작가 역할을 해주었으면 합니다."
+                           f"<이전 이야기 정보>"
+                           f"{self.book_content}"
+                           f"<이전 이야기 끝>"
+                           f"<이전 이야기>에 이어지는 내용의 두 가지의 서로 다른 이야기 초반부를 한 문장씩 제시해주세요."
+                           f"두 가지의 이야기 중 제가 하나의 이야기를 선택하기 전 까지 기다려주세요."
+                           f"제가 선택을 한 후 제가 선택한 이야기에 이어서 저에게 두 가지의 서로 다른 이야기를 한 문장씩 제시해주세요."
+                           f"서로 다른 이야기지만, <초기 정보>를 기반으로 해야하는 것은 같습니다."
+                           f"다음으로 그 문장들을 영어로도 설명 없이 번역만 해주세요."
+                           f"1.english"
+                           f"2.english"
+                           f"1.korean"
+                           f"2.korean"
             },
         ]
 
@@ -201,14 +204,17 @@ class WritePage(WebsocketConsumer):
         self.conversation = [
             {
                 "role": "user",
-                "content": f"{choice}번의 내용으로 동화 내용 마무리 엔딩 지어주세요.(20초 이내로)"
+                "content": f"<이전 이야기 정보>"
+                           f"{self.book_content}"
+                           f"<이전 이야기 끝>"
+                           f"<이전 이야기>에 이어지는 내용으로 마무리 엔딩 지어주세요.(20초 이내로)"
             },
         ]
 
     # -------------------------------------------------------------------- db 넣는 함수들
     # db에 page 저장
 
-    def save_story_to_db(self,image_uuid, page_num, ko_content, en_content):
+    def save_story_to_db(self, image_uuid, page_num, ko_content, en_content):
         try:
             book = Book.objects.get(book_id=self.book_id)
             imageUrl = get_secret("FILE_URL") + "/" + image_uuid + ".jpg"
@@ -217,43 +223,9 @@ class WritePage(WebsocketConsumer):
         except Book.DoesNotExist:
             print(f"Book with id {self.book_id} does not exist.")
 
-    def save_book_to_db(self,user_id, username, fairytale, gender, age):
+    def save_book_to_db(self, user_id, username, fairytale, gender, age):
          return Book.objects.create(user_id=user_id, fairytale=fairytale, username=username, gender=gender,age=age)
 
-    # # 달리 이미지 생성
-    # def generate_dalle_image(self, image_uuid, enContent):
-    #     openai.api_key = get_secret("GPT_KEY")
-    #     response = openai.Image.create(
-    #         prompt=f"당신은 유능한 동화 그림 작가입니다. 말 없이 요청하는 사항에 대해서 그림만 그려주세요. {enContent}라는 내용의 그림 하나 만들어주세요.",
-    #         n=1,
-    #         size="1024x1024"
-    #     )
-    #     # url 추출
-    #     imageUrl = response['data'][0]['url']
-    #     # 이미지 다운로드
-    #     image_data = requests.get(imageUrl).content
-    #     # S3 클라이언트 생성
-    #     try:
-    #         # S3 버킷에 이미지 업로드
-    #         get_file_url(image_uuid, image_data)
-    #     except NoCredentialsError:
-    #         print("AWS credentials not available.")
-    #         return None
-    # # 파일 S3 접근 및 업로드
-    # def get_file_url(image_uuid, file):
-    #     s3_client = boto3.client(
-    #         's3',
-    #         aws_access_key_id = get_secret("Access_key_ID"),
-    #         aws_secret_access_key = get_secret("Secret_access_key"),
-    #     )
-    #     file_key = image_uuid + ".jpg"
-    #     s3_client.put_object(Body=file, Bucket=get_secret("AWS_BUCKET_NAME"), Key=file_key)
-    #     # 업로드된 파일의 URL을 구성
-    #     url = get_secret("FILE_URL") + "/" + file_key
-    #     # URL 문자열에서 공백을 "_"로 대체
-    #     url = url.replace(" ", "_")
-    #     return url
-    # -------------------------------------------------------------------- 응답을 클라이언트한테 전송하는 함수
     def send_response_to_client(self, pageCnt):
         openai.api_key = get_secret("GPT_KEY")
         # GPT-3 스트리밍 API 호출
@@ -290,3 +262,38 @@ class WritePage(WebsocketConsumer):
             # else 사용자의 마지막 선택 end / n이 7일때
                 # 1. 받은 스토리(6번 페이지)를 db에 저장 -> 페이지 숫자랑 내용이랑 등등 + 이미지 UUID
                 # 2. 받은 스토리(6번 페이지) 셀러리로 넘겨서 달리로 그림 생성 하기 + 위 이미지 UUiD
+
+        # # 달리 이미지 생성
+        # def generate_dalle_image(self, image_uuid, enContent):
+        #     openai.api_key = get_secret("GPT_KEY")
+        #     response = openai.Image.create(
+        #         prompt=f"당신은 유능한 동화 그림 작가입니다. 말 없이 요청하는 사항에 대해서 그림만 그려주세요. {enContent}라는 내용의 그림 하나 만들어주세요.",
+        #         n=1,
+        #         size="1024x1024"
+        #     )
+        #     # url 추출
+        #     imageUrl = response['data'][0]['url']
+        #     # 이미지 다운로드
+        #     image_data = requests.get(imageUrl).content
+        #     # S3 클라이언트 생성
+        #     try:
+        #         # S3 버킷에 이미지 업로드
+        #         get_file_url(image_uuid, image_data)
+        #     except NoCredentialsError:
+        #         print("AWS credentials not available.")
+        #         return None
+        # # 파일 S3 접근 및 업로드
+        # def get_file_url(image_uuid, file):
+        #     s3_client = boto3.client(
+        #         's3',
+        #         aws_access_key_id = get_secret("Access_key_ID"),
+        #         aws_secret_access_key = get_secret("Secret_access_key"),
+        #     )
+        #     file_key = image_uuid + ".jpg"
+        #     s3_client.put_object(Body=file, Bucket=get_secret("AWS_BUCKET_NAME"), Key=file_key)
+        #     # 업로드된 파일의 URL을 구성
+        #     url = get_secret("FILE_URL") + "/" + file_key
+        #     # URL 문자열에서 공백을 "_"로 대체
+        #     url = url.replace(" ", "_")
+        #     return url
+        # -------------------------------------------------------------------- 응답을 클라이언트한테 전송하는 함수
