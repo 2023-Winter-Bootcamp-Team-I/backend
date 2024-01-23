@@ -35,16 +35,7 @@ class WritePage(WebsocketConsumer):
         page_num = pages.count()
         # 가져온 페이지의 수와 예상 페이지 수가 다르면 삭제
         if page_num != self.page_num:
-            Page.objects.filter(book_id=self.book_id).delete()
-        for pages in pages:
-            try:
-                # 해당 페이지의 한국어 내용과 영어 내용을 가져와 출력
-                koContent = pages.ko_content
-                enContent = pages.en_content
-                print(koContent, enContent)
-            except:
-                Page.objects.filter(book_id=self.book_id).delete()
-        pass
+            Book.objects.get(book_id=self.book_id).delete()
 
     # --------------------------------------------------------------------- 소켓 통신 (메세지)
     def receive(self, text_data):
@@ -182,7 +173,7 @@ class WritePage(WebsocketConsumer):
         self.conversation = [
             {
                 "role": "user",
-                "content": f"{choice}번을 고르겠습니다. {choice}번의 이야기에 이어지는 이야기를 이전에 당신의 응답과 같이 제시해주세요(20초 이내로)"
+                "content": f"{choice}번으로 선택하겠습니다. 위와 같은 양식으로 다음 내용 두 가지를 주세요."
             },
         ]
 
@@ -191,7 +182,7 @@ class WritePage(WebsocketConsumer):
         self.conversation = [
             {
                 "role": "user",
-                "content": f"{choice}번의 내용으로 동화 내용 마무리 엔딩 지어주세요.(20초 이내로)"
+                "content": f"{choice}번으로 선택하겠습니다. 위와 같은 양식으로 이제 그만 이야기를 끝내주세요."
             },
         ]
 
