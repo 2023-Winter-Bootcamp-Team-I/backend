@@ -30,11 +30,21 @@ class WritePage(WebsocketConsumer):
     # ---------------------------------------------------------------------- 소켓 통신 연결 해제
     def disconnect(self, closed_code):
         # 만약에 중간에 끊킨 경우, book_id와 관련된 것 전부 삭제
-        book_object = Book.objects.get(id=self.book_id)
-        page_count = Page.objects.filter(book=book_object).count()
-
-        if page_count != self.page_num:
-            Book.objects.filter(pk=self.book_id).delete()
+        book_object = Book.objects.get(book_id=self.book_id)
+        pages = Page.objects.filter(book_id=book_object)
+        page_num = pages.count()
+        # 가져온 페이지의 수와 예상 페이지 수가 다르면 삭제
+        if page_num != self.page_num:
+            Book.objects.filter(book_id=self.book_id).delete()
+        for pages in pages:
+            try:
+                # 해당 페이지의 한국어 내용과 영어 내용을 가져와 출력
+                koContent = pages.ko_content
+                enContent = pages.en_content
+                print(koContent, enContent)
+            except:
+                Page.objects.filter(book_id=self.book_id).delete()
+        pass
 
     # --------------------------------------------------------------------- 소켓 통신 (메세지)
     def receive(self, text_data):
@@ -75,6 +85,8 @@ class WritePage(WebsocketConsumer):
 
             ko_content = text_data_json.get('koContent')
             en_content = text_data_json.get('enContent')
+
+            self.book_content.append(ko_content) # 선택한 내용 저장
 
             image_uuid = str(uuid.uuid4())  # db에 uuid 넣은 이미지 저장
             self.save_story_to_db(image_uuid, page_num, ko_content['content'], en_content['content'])
@@ -163,7 +175,6 @@ class WritePage(WebsocketConsumer):
                                                    f"2.english"
                                                    f"1.korean"
                                                    f"2.korean"
-
                                     },
                                 ]
 
@@ -172,7 +183,19 @@ class WritePage(WebsocketConsumer):
         self.conversation = [
             {
                 "role": "user",
-                "content": f"{choice}번으로 선택하겠습니다. 위와 같은 양식으로 다음 내용 두 가지를 주세요."
+                "content": f"당신은 동화 작가 역할을 해주었으면 합니다."
+                           f"<이전 이야기 정보>"
+                           f"{self.book_content}"
+                           f"<이전 이야기 끝>"
+                           f"<이전 이야기>에 이어지는 내용의 두 가지의 서로 다른 이야기 초반부를 한 문장씩 제시해주세요."
+                           f"두 가지의 이야기 중 제가 하나의 이야기를 선택하기 전 까지 기다려주세요."
+                           f"제가 선택을 한 후 제가 선택한 이야기에 이어서 저에게 두 가지의 서로 다른 이야기를 한 문장씩 제시해주세요."
+                           f"서로 다른 이야기지만, <초기 정보>를 기반으로 해야하는 것은 같습니다."
+                           f"다음으로 그 문장들을 영어로도 설명 없이 번역만 해주세요."
+                           f"1.english"
+                           f"2.english"
+                           f"1.korean"
+                           f"2.korean"
             },
         ]
 
@@ -181,14 +204,17 @@ class WritePage(WebsocketConsumer):
         self.conversation = [
             {
                 "role": "user",
-                "content": f"{choice}번으로 선택하겠습니다. 위와 같은 양식으로 이제 그만 이야기를 끝내주세요."
+                "content": f"<이전 이야기 정보>"
+                           f"{self.book_content}"
+                           f"<이전 이야기 끝>"
+                           f"<이전 이야기>에 이어지는 내용으로 마무리 엔딩 지어주세요.(20초 이내로)"
             },
         ]
 
     # -------------------------------------------------------------------- db 넣는 함수들
     # db에 page 저장
 
-    def save_story_to_db(self,image_uuid, page_num, ko_content, en_content):
+    def save_story_to_db(self, image_uuid, page_num, ko_content, en_content):
         try:
             book = Book.objects.get(book_id=self.book_id)
             imageUrl = get_secret("FILE_URL") + "/" + image_uuid + ".jpg"
@@ -197,43 +223,9 @@ class WritePage(WebsocketConsumer):
         except Book.DoesNotExist:
             print(f"Book with id {self.book_id} does not exist.")
 
-    def save_book_to_db(self,user_id, username, fairytale, gender, age):
+    def save_book_to_db(self, user_id, username, fairytale, gender, age):
          return Book.objects.create(user_id=user_id, fairytale=fairytale, username=username, gender=gender,age=age)
 
-    # # 달리 이미지 생성
-    # def generate_dalle_image(self, image_uuid, enContent):
-    #     openai.api_key = get_secret("GPT_KEY")
-    #     response = openai.Image.create(
-    #         prompt=f"당신은 유능한 동화 그림 작가입니다. 말 없이 요청하는 사항에 대해서 그림만 그려주세요. {enContent}라는 내용의 그림 하나 만들어주세요.",
-    #         n=1,
-    #         size="1024x1024"
-    #     )
-    #     # url 추출
-    #     imageUrl = response['data'][0]['url']
-    #     # 이미지 다운로드
-    #     image_data = requests.get(imageUrl).content
-    #     # S3 클라이언트 생성
-    #     try:
-    #         # S3 버킷에 이미지 업로드
-    #         get_file_url(image_uuid, image_data)
-    #     except NoCredentialsError:
-    #         print("AWS credentials not available.")
-    #         return None
-    # # 파일 S3 접근 및 업로드
-    # def get_file_url(image_uuid, file):
-    #     s3_client = boto3.client(
-    #         's3',
-    #         aws_access_key_id = get_secret("Access_key_ID"),
-    #         aws_secret_access_key = get_secret("Secret_access_key"),
-    #     )
-    #     file_key = image_uuid + ".jpg"
-    #     s3_client.put_object(Body=file, Bucket=get_secret("AWS_BUCKET_NAME"), Key=file_key)
-    #     # 업로드된 파일의 URL을 구성
-    #     url = get_secret("FILE_URL") + "/" + file_key
-    #     # URL 문자열에서 공백을 "_"로 대체
-    #     url = url.replace(" ", "_")
-    #     return url
-    # -------------------------------------------------------------------- 응답을 클라이언트한테 전송하는 함수
     def send_response_to_client(self, pageCnt):
         openai.api_key = get_secret("GPT_KEY")
         # GPT-3 스트리밍 API 호출
@@ -270,3 +262,38 @@ class WritePage(WebsocketConsumer):
             # else 사용자의 마지막 선택 end / n이 7일때
                 # 1. 받은 스토리(6번 페이지)를 db에 저장 -> 페이지 숫자랑 내용이랑 등등 + 이미지 UUID
                 # 2. 받은 스토리(6번 페이지) 셀러리로 넘겨서 달리로 그림 생성 하기 + 위 이미지 UUiD
+
+        # # 달리 이미지 생성
+        # def generate_dalle_image(self, image_uuid, enContent):
+        #     openai.api_key = get_secret("GPT_KEY")
+        #     response = openai.Image.create(
+        #         prompt=f"당신은 유능한 동화 그림 작가입니다. 말 없이 요청하는 사항에 대해서 그림만 그려주세요. {enContent}라는 내용의 그림 하나 만들어주세요.",
+        #         n=1,
+        #         size="1024x1024"
+        #     )
+        #     # url 추출
+        #     imageUrl = response['data'][0]['url']
+        #     # 이미지 다운로드
+        #     image_data = requests.get(imageUrl).content
+        #     # S3 클라이언트 생성
+        #     try:
+        #         # S3 버킷에 이미지 업로드
+        #         get_file_url(image_uuid, image_data)
+        #     except NoCredentialsError:
+        #         print("AWS credentials not available.")
+        #         return None
+        # # 파일 S3 접근 및 업로드
+        # def get_file_url(image_uuid, file):
+        #     s3_client = boto3.client(
+        #         's3',
+        #         aws_access_key_id = get_secret("Access_key_ID"),
+        #         aws_secret_access_key = get_secret("Secret_access_key"),
+        #     )
+        #     file_key = image_uuid + ".jpg"
+        #     s3_client.put_object(Body=file, Bucket=get_secret("AWS_BUCKET_NAME"), Key=file_key)
+        #     # 업로드된 파일의 URL을 구성
+        #     url = get_secret("FILE_URL") + "/" + file_key
+        #     # URL 문자열에서 공백을 "_"로 대체
+        #     url = url.replace(" ", "_")
+        #     return url
+        # -------------------------------------------------------------------- 응답을 클라이언트한테 전송하는 함수
