@@ -30,12 +30,11 @@ class WritePage(WebsocketConsumer):
     # ---------------------------------------------------------------------- 소켓 통신 연결 해제
     def disconnect(self, closed_code):
         # 만약에 중간에 끊킨 경우, book_id와 관련된 것 전부 삭제
-        book_object = Book.objects.get(book_id=self.book_id)
-        pages = Page.objects.filter(book_id=book_object)
-        page_num = pages.count()
-        # 가져온 페이지의 수와 예상 페이지 수가 다르면 삭제
-        if page_num != self.page_num:
-            Book.objects.get(book_id=self.book_id).delete()
+        book_object = Book.objects.get(id=self.book_id)
+        page_count = Page.objects.filter(book=book_object).count()
+
+        if page_count != self.page_num:
+            Book.objects.filter(pk=self.book_id).delete()
 
     # --------------------------------------------------------------------- 소켓 통신 (메세지)
     def receive(self, text_data):
