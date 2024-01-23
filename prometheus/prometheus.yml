@@ -1,7 +1,23 @@
 global:
-  scrape_interval: 15s
+  scrape_interval: 15s # 타겟 시스템으로 부터 메트릭을 읽어오는 주기
+  external_labels:
+    monitor: 'prometheus-monitor'
 
-scrape_configs:
+alerting:
+  # 이 부분과 관련된 파일 구조를 바꾸거나 내용추가가 필요할듯?
+  alertmanagers:
+  - static_configs:
+    - targets:
+      - alertmanager:9093
+
+scrape_configs: # 데이타 수집 대상과 방법을 정의하는 부분
+  # 프로메테우스 연결
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
+
+  # 백엔드 서버와 연결
+  - job_name: 'backend`
+      static_configs:
+      - targets: [ 'localhost:8000', 'host.docker.internal:8000','backend-service:8000'] # 요기 수정 필요...maybe?
+    scrape_interval: 5s
