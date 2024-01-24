@@ -1,6 +1,9 @@
 # tasks.py
 
 from __future__ import absolute_import, unicode_literals
+
+import os
+
 from gtts import gTTS
 import uuid
 from celery import shared_task
@@ -30,9 +33,14 @@ def generate_dalle_image_async(image_uuid, enContent):
 def gtts_async(tts_uuid,content,lan):
     print("진입")
     tts = gTTS(text=content, lang=lan)
-    print(tts)
-    return upload_to_s3(tts_uuid, tts,'tts')
+    temp_file_path = f"{tts_uuid}.mp3"
+    tts.save(temp_file_path)
 
+    with open(temp_file_path, 'rb') as file_data:
+        url = upload_to_s3(tts_uuid, file_data, 'tts')
+
+    os.remove(temp_file_path)
+    return url
 def upload_to_s3(file_uuid, file, type):
     try:
         s3_client = boto3.client(
@@ -49,11 +57,13 @@ def upload_to_s3(file_uuid, file, type):
             return url
         elif type == 'tts':
             print('진입3')
-            file_key = file_uuid + ".mp3"
+            file_key = f"{file_uuid}.mp3"
             s3_client.put_object(Body=file, Bucket=get_secret("AWS_BUCKET_NAME"), Key=file_key)
             url = get_secret("FILE_URL") + "/" + file_key
             url = url.replace(" ", "_")
+            print(url)
             return url
+
     except NoCredentialsError:
         print("AWS credentials not available.")
         return None

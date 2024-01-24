@@ -87,7 +87,7 @@ class WritePage(WebsocketConsumer):
         elif text_data_json['type'] == 'ing':
             # 책 내용 가져온거 처리하기
             choice = text_data_json.get('choice')
-
+            print("ing")
             ko_content = text_data_json.get('koContent')
             en_content = text_data_json.get('enContent')
 
