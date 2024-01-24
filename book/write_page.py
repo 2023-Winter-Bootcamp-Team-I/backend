@@ -94,6 +94,7 @@ class WritePage(WebsocketConsumer):
             self.save_page_story_to_db(image_uuid, page_num, ko_content['content'], en_content['content']) # db에 uuid 넣은 이미지 저장
             image = generate_dalle_image_async.delay(image_uuid, en_content['content'])  # 비동기로 해주었음 tasks.py ㄱ
 
+
             # 한국어 음성파일 비동기
             ko_tts_uuid = str(uuid.uuid4())
             ko_tts = gtts_async.delay(ko_tts_uuid, ko_content['content'], 'ko')
@@ -101,7 +102,7 @@ class WritePage(WebsocketConsumer):
             en_tts_uuid = str(uuid.uuid4())
             en_tts = gtts_async.delay(en_tts_uuid, en_content['content'], 'en')
             # 음성 파일 저장
-            self.save_page_tts_to_db(ko_tts_uuid,en_tts_uuid)
+            self.save_page_tts_to_db(ko_tts_uuid, en_tts_uuid, page_num)
 
             # 6번째 페이지 처리
             if page_num == 6:
@@ -112,20 +113,34 @@ class WritePage(WebsocketConsumer):
                 self.generate_ing_gpt_responses(choice)  # 중간
                 page_num += 1
                 self.send_response_to_client(page_num)
+
+
         elif text_data_json['type'] == 'end':  # 마지막 선택 처리
 
             ko_content = text_data_json.get('koContent')
             en_content = text_data_json.get('enContent')
             image_uuid = str(uuid.uuid4())
 
-            self.save_story_to_db(image_uuid, page_num, ko_content['content'], en_content['content'])
+            self.save_page_story_to_db(image_uuid, page_num, ko_content['content'], en_content['content'])
+
 
             # 비동기로 해주었음 tasks.py ㄱ
             image = generate_dalle_image_async.delay(image_uuid, en_content['content'])  # 리턴 값이 url임 -> 나중에 비동기
 
+
+            # 한국어 음성파일 비동기
+            ko_tts_uuid = str(uuid.uuid4())
+            ko_tts = gtts_async.delay(ko_tts_uuid, ko_content['content'], 'ko')
+            # 영어 음성파일 비동기
+            en_tts_uuid = str(uuid.uuid4())
+            en_tts = gtts_async.delay(en_tts_uuid, en_content['content'], 'en')
+            # 음성 파일 저장
+            self.save_page_tts_to_db(ko_tts_uuid, en_tts_uuid, page_num)
+
+
             self.send(text_data=json.dumps({"bookId": self.book_id}))
 
-            print(image)
+            # print(image)
 
     ######################## 함수들 ########################
     # --------------------------------------------------------------------- 이야기 만들 때 필요한 함수들
@@ -232,10 +247,10 @@ class WritePage(WebsocketConsumer):
         except Book.DoesNotExist:
             print(f"Book with id {self.book_id} does not exist.")
 
-    def save_page_tts_to_db(self, ko_uuid, en_uuid):
+    def save_page_tts_to_db(self, ko_uuid, en_uuid, page_num):
         try:
             book = Book.objects.get(book_id=self.book_id)
-            page = Page.objects.get(book_id=book.book_id)
+            page = Page.objects.get(book_id=book.book_id, page_num=page_num)
             page.ko_tts_url = get_secret("FILE_URL") + "/" + ko_uuid + ".mp3"
             page.en_tts_url = get_secret("FILE_URL") + "/" + en_uuid + ".mp3"
 
