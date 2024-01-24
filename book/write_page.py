@@ -19,7 +19,7 @@ import uuid
 class WritePage(WebsocketConsumer):
     # ----------------------------------------------------------------------- 소켓 통신 연결
     def connect(self):
-        # print("connecting")
+        print("connecting") # 지금 이건 왜 안찍히져
         self.accept()
         # 책-페이지 저장 리스트 아래 작성
         self.book_content = []  # 전체 컨텐츠 저장
@@ -30,37 +30,41 @@ class WritePage(WebsocketConsumer):
 
     # ---------------------------------------------------------------------- 소켓 통신 연결 해제
     def disconnect(self, closed_code):
-        # 만약에 중간에 끊킨 경우, book_id와 관련된 것 전부 삭제
-        book_object = Book.objects.get(book_id=self.book_id)
-        pages = Page.objects.filter(book_id=book_object)
-        page_num = pages.count()
-        # 가져온 페이지의 수와 예상 페이지 수가 다르면 삭제
-        if page_num != self.page_num:
-            Book.objects.filter(book_id=self.book_id).delete()
-        for pages in pages:
+        # 페이지 개수 비교해서 하는거보다는 제목이 지어져 있느냐 안 지어져있느냐로 삭제 하는게 좋을 것 같아서 이렇게 했습니다!
+        # 'book_id' 속성이 있는지 확인
+        if hasattr(self, 'book_id'):
             try:
-                # 해당 페이지의 한국어 내용과 영어 내용을 가져와 출력
-                koContent = pages.ko_content
-                enContent = pages.en_content
-                print(koContent, enContent)
-            except:
-                Page.objects.filter(book_id=self.book_id).delete()
-        pass
+                # 'book_id'로 책 조회
+                book = Book.objects.get(book_id=self.book_id)
+                print(book)
+                # 'title' 필드가 비어 있는지 확인
+                if not book.title:
+                    # 'title' 필드가 비어 있으면 책 삭제
+                    book.delete()
+                    print(f"Deleted book with empty title and id {self.book_id}")
+                else:
+                    print(f"Book with id {self.book_id} has a title and will not be deleted")
 
+            except Book.DoesNotExist:
+                # 책이 존재하지 않는 경우
+                print(f"Book with id {self.book_id} does not exist or already deleted")
+        else:
+            # 'book_id' 속성이 없는 경우
+            print("No book to delete")
     # --------------------------------------------------------------------- 소켓 통신 (메세지)
     def receive(self, text_data):
         text_data_json = json.loads(text_data)  # data를 받음
         page_num = text_data_json.get('pageCnt')
         if text_data_json['type'] == 'start':
             user_info = self.extract_user_info(text_data_json)
-
+            print('start 진입')
             try:
                 user_id = text_data_json['userId']
                 username = text_data_json['userName']
                 fairytale = text_data_json['fairyTale']
                 gender = text_data_json['gender']
                 age = int(text_data_json['age'])
-
+                print('try 진입')
                 # 수정된 부분: user_id를 사용하여 User 모델의 인스턴스를 가져와서 할당
                 user_instance = User.objects.get(user_id=user_id)
                 book = self.save_book_to_db(user_instance, username, fairytale, gender,age)

@@ -28,7 +28,9 @@ def generate_dalle_image_async(image_uuid, enContent):
 
 @shared_task
 def gtts_async(tts_uuid,content,lan):
+    print("진입")
     tts = gTTS(text=content, lang=lan)
+    print(tts)
     return upload_to_s3(tts_uuid, tts,'tts')
 
 def upload_to_s3(file_uuid, file, type):
@@ -38,6 +40,7 @@ def upload_to_s3(file_uuid, file, type):
             aws_access_key_id=get_secret("Access_key_ID"),
             aws_secret_access_key=get_secret("Secret_access_key")
         )
+        print('진입 2')
         if type == 'image':
             file_key = file_uuid + ".jpg"
             s3_client.put_object(Body=file, Bucket=get_secret("AWS_BUCKET_NAME"), Key=file_key)
@@ -45,6 +48,7 @@ def upload_to_s3(file_uuid, file, type):
             url = url.replace(" ", "_")
             return url
         elif type == 'tts':
+            print('진입3')
             file_key = file_uuid + ".mp3"
             s3_client.put_object(Body=file, Bucket=get_secret("AWS_BUCKET_NAME"), Key=file_key)
             url = get_secret("FILE_URL") + "/" + file_key
