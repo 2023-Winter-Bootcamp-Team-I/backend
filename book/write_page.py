@@ -154,6 +154,7 @@ class WritePage(WebsocketConsumer):
                                                    f"제가 선택을 한 후 제가 선택한 이야기에 이어서 저에게 두 가지의 서로 다른 이야기를 한 문장씩 제시해주세요."
                                                    f"서로 다른 이야기지만, <초기 정보>를 기반으로 해야하는 것은 같습니다."
                                                    f"다음으로 그 문장들을 영어로도 설명 없이 번역만 해주세요."
+                                                   f"두 문장 이내로 대답해주세요."
                                                    f"1.korean"
                                                    f"2.korean"
                                                    f"1.english"
@@ -176,6 +177,7 @@ class WritePage(WebsocketConsumer):
                                                    f"제가 선택을 한 후 제가 선택한 이야기에 이어서 저에게 두 가지의 서로 다른 이야기를 한 문장씩 제시해주세요."
                                                    f"서로 다른 이야기지만, <초기 정보>를 기반으로 해야하는 것은 같습니다."
                                                    f"다음으로 그 문장들을 영어로도 설명 없이 번역만 해주세요."
+                                                   f"두 문장 이내로 대답해주세요."
                                                    f"1.english"
                                                    f"2.english"
                                                    f"1.korean"
@@ -187,7 +189,7 @@ class WritePage(WebsocketConsumer):
         # 지피티씨 호출해서 만들고 반환하기. -> 내가 선택한 이야기로 진행해주고 계속 이어서 두가지로 해줘
         self.conversation = [
             {
-                "role": "user",
+                "role": "system",
                 "content": f"당신은 동화 작가 역할을 해주었으면 합니다."
                            f"<이전 이야기 정보>"
                            f"{self.book_content}"
@@ -208,7 +210,7 @@ class WritePage(WebsocketConsumer):
         # 지피티씨 호출해서 만들고 반환하기. -> 내가 선택한 이야기로 이야기 마무리 엔딩 내줘
         self.conversation = [
             {
-                "role": "user",
+                "role": "system",
                 "content": f"<이전 이야기 정보>"
                            f"{self.book_content}"
                            f"<이전 이야기 끝>"
@@ -235,9 +237,10 @@ class WritePage(WebsocketConsumer):
         openai.api_key = get_secret("GPT_KEY")
         # GPT-3 스트리밍 API 호출
         for response in openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
+                # model="gpt-3.5-turbo",
+                model="gpt-4",
                 messages=self.conversation,
-                temperature=0.5,
+                temperature=0.1,
                 stream=True
         ):
             # print(response)
