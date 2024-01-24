@@ -7,6 +7,7 @@ from channels.generic.websocket import WebsocketConsumer
 from django.db import IntegrityError
 from pip._internal.operations.prepare import get_file_url
 from .tasks import generate_dalle_image_async  # tasks.py 에서 정의한 함수 임포트
+from .tasks import gtts_async
 
 from book.models import Book
 from page.models import Page
@@ -88,11 +89,19 @@ class WritePage(WebsocketConsumer):
 
             self.book_content.append(ko_content) # 선택한 내용 저장
 
-            image_uuid = str(uuid.uuid4())  # db에 uuid 넣은 이미지 저장
-            self.save_story_to_db(image_uuid, page_num, ko_content['content'], en_content['content'])
+            # 이미지 저장
+            image_uuid = str(uuid.uuid4())
+            self.save_page_story_to_db(image_uuid, page_num, ko_content['content'], en_content['content']) # db에 uuid 넣은 이미지 저장
+            image = generate_dalle_image_async.delay(image_uuid, en_content['content'])  # 비동기로 해주었음 tasks.py ㄱ
 
-            # 비동기로 해주었음 tasks.py ㄱ
-            image = generate_dalle_image_async.delay(image_uuid, en_content['content'])  # 비동기 함수 ??
+            # 한국어 음성파일 비동기
+            ko_tts_uuid = str(uuid.uuid4())
+            ko_tts = gtts_async.delay(ko_tts_uuid, ko_content['content'], 'ko')
+            # 영어 음성파일 비동기
+            en_tts_uuid = str(uuid.uuid4())
+            en_tts = gtts_async.delay(en_tts_uuid, en_content['content'], 'en')
+            # 음성 파일 저장
+            self.save_page_tts_to_db(ko_tts_uuid,en_tts_uuid)
 
             # 6번째 페이지 처리
             if page_num == 6:
@@ -214,7 +223,7 @@ class WritePage(WebsocketConsumer):
     # -------------------------------------------------------------------- db 넣는 함수들
     # db에 page 저장
 
-    def save_story_to_db(self, image_uuid, page_num, ko_content, en_content):
+    def save_page_story_to_db(self, image_uuid, page_num, ko_content, en_content):
         try:
             book = Book.objects.get(book_id=self.book_id)
             imageUrl = get_secret("FILE_URL") + "/" + image_uuid + ".jpg"
@@ -222,6 +231,20 @@ class WritePage(WebsocketConsumer):
                                 en_content=en_content)
         except Book.DoesNotExist:
             print(f"Book with id {self.book_id} does not exist.")
+
+    def save_page_tts_to_db(self, ko_uuid, en_uuid):
+        try:
+            book = Book.objects.get(book_id=self.book_id)
+            page = Page.objects.get(book_id=book.book_id)
+            page.ko_tts_url = get_secret("FILE_URL") + "/" + ko_uuid + ".mp3"
+            page.en_tts_url = get_secret("FILE_URL") + "/" + en_uuid + ".mp3"
+
+            page.save()
+
+        except Book.DoesNotExist:
+            print(f"Book with id {self.book_id} does not exist.")
+        except Page.DoesNotExist:
+            print(f"Page for book with id {self.book_id} does not exist.")
 
     def save_book_to_db(self, user_id, username, fairytale, gender, age):
          return Book.objects.create(user_id=user_id, fairytale=fairytale, username=username, gender=gender,age=age)
