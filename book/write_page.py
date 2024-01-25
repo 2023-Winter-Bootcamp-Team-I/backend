@@ -159,7 +159,6 @@ class WritePage(WebsocketConsumer):
         return user_info
 
     def generate_start_gpt_responses(self, user_info):
-        if user_info['language'] == 'ko':  # 프론트에서.. language로 하기로 했대요..... 그리고 프롬프팅 두개다 변경 부탁 드려요!
             self.conversation = [
                 {
                     "role": "system",
