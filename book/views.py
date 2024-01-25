@@ -110,8 +110,10 @@ class BookDetail(APIView):
                 'page_num': page.page_num,
                 'ko_content': page.ko_content,
                 'en_content': page.en_content,
+                'ko_tts_url': page.ko_tts_url,
+                'en_tts_url': page.en_tts_url,
                 # 이미지 선택 안할시 기본 이미지 url 반환
-                'image_url': page.image_url.url if page.image_url else 'https://bookg-s3-bucket.s3.ap-northeast-2.amazonaws.com/UUID.png',
+                'image_url': page.image_url if page.image_url else 'https://bookg-s3-bucket.s3.ap-northeast-2.amazonaws.com/UUID.png',
                 'created_at': page.created_at,
                 'update_at': page.updated_at
             }

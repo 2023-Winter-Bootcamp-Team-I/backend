@@ -28,7 +28,7 @@ class PageContentSerializer(serializers.ModelSerializer):
 class PageContentChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Page
-        fields = ['page_id', 'book_id', 'page_num', 'ko_content', 'en_content']
+        fields = ['page_id', 'book_id', 'page_num', 'ko_content', 'en_content', 'ko_tts_url', 'en_tts_url', 'created_at', 'updated_at']
 
 
 class BookTitleCreateSerializer(serializers.ModelSerializer):
