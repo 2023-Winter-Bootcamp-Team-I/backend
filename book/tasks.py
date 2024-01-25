@@ -42,6 +42,7 @@ def gtts_async(tts_uuid,content,lan):
 
     os.remove(temp_file_path)
     return url
+
 def upload_to_s3(file_uuid, file, type):
     try:
         s3_client = boto3.client(
@@ -52,17 +53,16 @@ def upload_to_s3(file_uuid, file, type):
         print('진입 2')
         if type == 'image':
             file_key = file_uuid + ".jpg"
-            s3_client.put_object(Body=file, Bucket=get_secret("AWS_BUCKET_NAME"), Key=file_key)
+            s3_client.put_object(Body=file, Bucket=get_secret("AWS_BUCKET_NAME"), Key=file_key, ContentType='image/jpeg')
             url = get_secret("FILE_URL") + "/" + file_key
             url = url.replace(" ", "_")
             return url
         elif type == 'tts':
             print('진입3')
-            file_key = f"{file_uuid}.mp3"
-            s3_client.put_object(Body=file, Bucket=get_secret("AWS_BUCKET_NAME"), Key=file_key)
+            file_key = file_uuid + ".mp3"
+            s3_client.put_object(Body=file, Bucket=get_secret("AWS_BUCKET_NAME"), Key=file_key, ContentType='audio/mpeg')
             url = get_secret("FILE_URL") + "/" + file_key
             url = url.replace(" ", "_")
-            print(url)
             return url
 
     except NoCredentialsError:
