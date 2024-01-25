@@ -12,7 +12,7 @@ class Page(models.Model):
     en_content = models.TextField(max_length=500)
     ko_tts_url = models.TextField(max_length=500, null=True)
     en_tts_url = models.TextField(max_length=500, null=True)
-    image_url = models.ImageField(upload_to="", max_length=500, null=True)
+    image_url = models.TextField(max_length=500, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
     is_deleted = models.DateTimeField(default=None, null=True)

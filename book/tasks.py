@@ -25,7 +25,7 @@ def generate_dalle_image_async(image_uuid, enContent):
         )
         imageUrl = response['data'][0]['url']
         image_data = requests.get(imageUrl).content
-        return upload_to_s3(image_uuid, image_data,'image')
+        return upload_to_s3(image_uuid, image_data, 'image')
     except Exception as e:
         print(f"Error generating DALL-E image: {e}")
         return None
