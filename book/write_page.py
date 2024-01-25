@@ -19,7 +19,7 @@ import uuid
 class WritePage(WebsocketConsumer):
     # ----------------------------------------------------------------------- 소켓 통신 연결
     def connect(self):
-        print("connecting") # 지금 이건 왜 안찍히져
+        print("connecting")  # 지금 이건 왜 안찍히져
         self.accept()
         # 책-페이지 저장 리스트 아래 작성
         self.book_content = []  # 전체 컨텐츠 저장
@@ -51,7 +51,7 @@ class WritePage(WebsocketConsumer):
         else:
             # 'book_id' 속성이 없는 경우
             print("No book to delete")
-            
+
     # --------------------------------------------------------------------- 소켓 통신 (메세지)
     def receive(self, text_data):
         text_data_json = json.loads(text_data)  # data를 받음
@@ -68,10 +68,10 @@ class WritePage(WebsocketConsumer):
                 print('try 진입')
                 # 수정된 부분: user_id를 사용하여 User 모델의 인스턴스를 가져와서 할당
                 user_instance = User.objects.get(user_id=user_id)
-                book = self.save_book_to_db(user_instance, username, fairytale, gender,age)
+                book = self.save_book_to_db(user_instance, username, fairytale, gender, age)
 
                 self.book_id = book.book_id
-                #print(self.book_id)
+                # print(self.book_id)
 
             except KeyError as e:
                 # text_data_json에서 필요한 키가 누락된 경우
@@ -92,13 +92,13 @@ class WritePage(WebsocketConsumer):
             ko_content = text_data_json.get('koContent')
             en_content = text_data_json.get('enContent')
 
-            self.book_content.append(ko_content) # 선택한 내용 저장
+            self.book_content.append(ko_content)  # 선택한 내용 저장
 
             # 이미지 저장
             image_uuid = str(uuid.uuid4())
-            self.save_page_story_to_db(image_uuid, page_num, ko_content['content'], en_content['content']) # db에 uuid 넣은 이미지 저장
+            self.save_page_story_to_db(image_uuid, page_num, ko_content['content'],
+                                       en_content['content'])  # db에 uuid 넣은 이미지 저장
             image = generate_dalle_image_async.delay(image_uuid, en_content['content'])  # 비동기로 해주었음 tasks.py ㄱ
-
 
             # 한국어 음성파일 비동기
             ko_tts_uuid = str(uuid.uuid4())
@@ -128,10 +128,8 @@ class WritePage(WebsocketConsumer):
 
             self.save_page_story_to_db(image_uuid, page_num, ko_content['content'], en_content['content'])
 
-
             # 비동기로 해주었음 tasks.py ㄱ
             image = generate_dalle_image_async.delay(image_uuid, en_content['content'])  # 리턴 값이 url임 -> 나중에 비동기
-
 
             # 한국어 음성파일 비동기
             ko_tts_uuid = str(uuid.uuid4())
@@ -142,7 +140,6 @@ class WritePage(WebsocketConsumer):
             # 음성 파일 저장
             self.save_page_tts_to_db(ko_tts_uuid, en_tts_uuid, page_num)
 
-
             self.send(text_data=json.dumps({"bookId": self.book_id}))
 
             # print(image)
@@ -152,7 +149,7 @@ class WritePage(WebsocketConsumer):
     # 자 이거 api 명세서에 유림님이 적어주신 카멜케이스 변수명 대로 수정 부탁드려요 (저는 하다가 말았어요~)
     def extract_user_info(self, data):
         user_info = {
-            'userId' : data.get('userId'),
+            'userId': data.get('userId'),
             'userName': data.get('userName'),
             'gender': data.get('gender'),
             'age': data.get('age'),
@@ -164,52 +161,51 @@ class WritePage(WebsocketConsumer):
     def generate_start_gpt_responses(self, user_info):
         if user_info['language'] == 'ko':  # 프론트에서.. language로 하기로 했대요..... 그리고 프롬프팅 두개다 변경 부탁 드려요!
             self.conversation = [
-                                    {
-                                        "role": "system",
-                                        "content": f"당신은 동화 작가 역할을 해주었으면 합니다."
-                                                   f"<초기 정보>"
-                                                   f"주인공 이름: {user_info['userName']}"
-                                                   f"주인공 성별: {user_info['gender']}"
-                                                   f"대상 연령: {user_info['age']}"
-                                                   f"원작 동화: {user_info['fairyTale']}"
-                                                   f"<초기 정보 끝>"
-                                                   f"<초기 정보>를 기반으로, 저에게 두 가지의 서로 다른 이야기의 초반부를 한 문장씩 제시해주세요."
-                                                   f"두 가지의 이야기 중 제가 하나의 이야기를 선택하기 전 까지 기다려주세요."
-                                                   f"제가 선택을 한 후 제가 선택한 이야기에 이어서 저에게 두 가지의 서로 다른 이야기를 한 문장씩 제시해주세요."
-                                                   f"문장마다 영어로도 번역 해주세요."
-                                                   f"서로 다른 이야기지만, <초기 정보>를 기반으로 해야하는 것은 같습니다."
-                                                   f"두 문장 이내로 대답해주세요."
-                                                   f"한국어로 이야기1 -> 영어로 이야기1, 한국어로 이야기2, 영어로 이야기2 순으로 아래와 같이 응답바랍니다."
-                                                   f"1.korean"
-                                                   f"1.english"
-                                                   f"2.korean"
-                                                   f"2.english",
-                                    }
-                                ]
+                {
+                    "role": "system",
+                    "content": f"당신은 동화 작가 역할을 해주었으면 합니다."
+                               f"<초기 정보>"
+                               f"주인공 이름: {user_info['userName']}"
+                               f"주인공 성별: {user_info['gender']}"
+                               f"대상 연령: {user_info['age']}"
+                               f"원작 동화: {user_info['fairyTale']}"
+                               f"<초기 정보 끝>"
+                               f"<초기 정보>를 기반으로, 저에게 두 가지의 서로 다른 이야기의 초반부를 한 문장씩 제시해주세요."
+                               f"두 가지의 이야기 중 제가 하나의 이야기를 선택하기 전 까지 기다려주세요."
+                               f"제가 선택을 한 후 제가 선택한 이야기에 이어서 저에게 두 가지의 서로 다른 이야기를 한 문장씩 제시해주세요."
+                               f"문장마다 영어로도 번역 해주세요."
+                               f"서로 다른 이야기지만, <초기 정보>를 기반으로 해야하는 것은 같습니다."
+                               f"두 문장 이내로 대답해주세요."
+                               f"1.korean"
+                               f"1.english"
+                               f"2.korean"
+                               f"2.english",
+                }
+            ]
         elif user_info['language'] == "en":
             self.conversation = [
-                                    {
-                                        "role": "system",
-                                        "content": f"당신은 동화 작가 역할을 해주었으면 합니다."
-                                                   f"<초기 정보>"
-                                                   f"주인공 이름: {user_info['userName']}"
-                                                   f"주인공 성별: {user_info['gender']}"
-                                                   f"대상 연령: {user_info['age']}"
-                                                   f"원작 동화: {user_info['fairyTale']}"
-                                                   f"<초기 정보 끝>"
-                                                   f"<초기 정보>를 기반으로, 저에게 두 가지의 서로 다른 이야기의 초반부를 한 문장씩 제시해주세요."
-                                                   f"두 가지의 이야기 중 제가 하나의 이야기를 선택하기 전 까지 기다려주세요."
-                                                   f"제가 선택을 한 후 제가 선택한 이야기에 이어서 저에게 두 가지의 서로 다른 이야기를 한 문장씩 제시해주세요."
-                                                   f"문장마다 한글로도 번역 해주세요."
-                                                   f"서로 다른 이야기지만, <초기 정보>를 기반으로 해야하는 것은 같습니다."
-                                                   f"두 문장 이내로 대답해주세요."
-                                                   f"영어로 이야기1 -> 한국어로 이야기1 -> 영어로 이야기2 -> 한국어로 이야기2 순으로 아래와 같이 응답바랍니다."
-                                                   f"1.english"
-                                                   f"1.korean"
-                                                   f"2.english"
-                                                   f"2.korean"
-                                    },
-                                ]
+                {
+                    "role": "system",
+                    "content": f"당신은 동화 작가 역할을 해주었으면 합니다."
+                               f"<초기 정보>"
+                               f"주인공 이름: {user_info['userName']}"
+                               f"주인공 성별: {user_info['gender']}"
+                               f"대상 연령: {user_info['age']}"
+                               f"원작 동화: {user_info['fairyTale']}"
+                               f"<초기 정보 끝>"
+                               f"<초기 정보>를 기반으로, 저에게 두 가지의 서로 다른 이야기의 초반부를 한 문장씩 제시해주세요."
+                               f"두 가지의 이야기 중 제가 하나의 이야기를 선택하기 전 까지 기다려주세요."
+                               f"제가 선택을 한 후 제가 선택한 이야기에 이어서 저에게 두 가지의 서로 다른 이야기를 한 문장씩 제시해주세요."
+                               f"문장마다 한글로도 번역 해주세요."
+                               f"서로 다른 이야기지만, <초기 정보>를 기반으로 해야하는 것은 같습니다."
+                               f"두 문장 이내로 대답해주세요."
+                               f"아래와 같은 양식 대로만 부탁드립니다."
+                               f"1.english"
+                               f"1.korean"
+                               f"2.english"
+                               f"2.korean"
+                },
+            ]
 
     def generate_ing_gpt_responses(self, choice):
         # 지피티씨 호출해서 만들고 반환하기. -> 내가 선택한 이야기로 진행해주고 계속 이어서 두가지로 해줘
@@ -222,7 +218,6 @@ class WritePage(WebsocketConsumer):
                            f"<이전 이야기 끝>"
                            f"<이전 이야기>에 이어지는 내용의 두 가지의 서로 다른 이야기를 한 문장씩 제시해주세요."
                            f"두 가지의 이야기 중 제가 하나의 이야기를 선택하기 전 까지 기다려주세요."
-                           f"제가 선택을 한 후 제가 선택한 이야기에 이어서 저에게 두 가지의 서로 다른 이야기를 한 문장씩 제시해주세요."
                            f"문장마다 한글로도 번역 해주세요."
                            f"서로 다른 이야기지만, <이전 이야기 정보>를 기반으로 해야하는 것은 같습니다."
                            f"1.korean"
@@ -240,7 +235,9 @@ class WritePage(WebsocketConsumer):
                 "content": f"<이전 이야기 정보>"
                            f"{self.book_content}"
                            f"<이전 이야기 끝>"
-                           f"<이전 이야기>에 이어지는 하나의 내용으로 마무리 엔딩 지어주세요.(20초 이내로)"
+                           f"<이전 이야기>에 이어지는 하나의 내용으로 동화 이야기를 끝내주세요."
+                           f"1.korean"
+                           f"1.english"
             },
         ]
 
@@ -271,14 +268,14 @@ class WritePage(WebsocketConsumer):
             print(f"Page for book with id {self.book_id} does not exist.")
 
     def save_book_to_db(self, user_id, username, fairytale, gender, age):
-         return Book.objects.create(user_id=user_id, fairytale=fairytale, username=username, gender=gender,age=age)
+        return Book.objects.create(user_id=user_id, fairytale=fairytale, username=username, gender=gender, age=age)
 
     def send_response_to_client(self, pageCnt):
         openai.api_key = get_secret("GPT_KEY")
         # GPT-3 스트리밍 API 호출
         for response in openai.ChatCompletion.create(
-                # model="gpt-3.5-turbo",
-                model="gpt-3.5-turbo",
+                model="gpt-4",
+                # model="gpt-4",
                 messages=self.conversation,
                 temperature=0.5,
                 stream=True
@@ -294,22 +291,22 @@ class WritePage(WebsocketConsumer):
                 print("Invalid response format: {}".format(response))
 
         # if 초기 생성 -> 초기 값을 서버가 받음 (n번 페이지) = 0 <start>
-            # data json 형태니까 나눌 수 있겠지
-            # 나이 성별 이름 동화 등을 가지고 gpt 함수를 부를거야
-            # 답변이 생성되면 프론트로 디비 저장 않고, 다시 보내줘 -> 두개 다 반환 n++ 까지 하고 n 전달
+        # data json 형태니까 나눌 수 있겠지
+        # 나이 성별 이름 동화 등을 가지고 gpt 함수를 부를거야
+        # 답변이 생성되면 프론트로 디비 저장 않고, 다시 보내줘 -> 두개 다 반환 n++ 까지 하고 n 전달
         # elif 책 만들고 있는 경우 -> 선택한 스토리를 서버가 받음 (n번 페이지) <ing>
-            # data json 형태니까 나눌 수 있겠지
-            # 1. 받은 스토리(n번 페이지)를 db에 저장 -> 페이지 숫자랑 내용이랑 등등 + 이미지 UUID생성
-            # 2. 받은 스토리(n번 페이지) 셀러리로 넘겨서 달리로 그림 생성 하기 + 위 이미지 UUiD전달
-            # 3. if n+1번 페이지 제작 중 == 6 <- 분기 이유 : 프롬프팅 함수가 달라짐.
-                # 3-1. 이전에 받은 값(n) 받아서 이야기 2개 생성
-                # 3-2. 답변 생성되면 프론트로 다시 보내기 -> 두개다 반환 (영어버전 한글 버전 다) n++
-            # 3. elif 마지막이 아니라면(2-5번 페이지 제작중)
-                # 3-1. 이전에 받은 값(n) 받아서 이야기 2개 생성
-                # 3-2. 답변 생성되면 프론트로 다시 보내기 -> 두개다 반환 (영어버전 한글 버전 다) n++
-            # else 사용자의 마지막 선택 end / n이 7일때
-                # 1. 받은 스토리(6번 페이지)를 db에 저장 -> 페이지 숫자랑 내용이랑 등등 + 이미지 UUID
-                # 2. 받은 스토리(6번 페이지) 셀러리로 넘겨서 달리로 그림 생성 하기 + 위 이미지 UUiD
+        # data json 형태니까 나눌 수 있겠지
+        # 1. 받은 스토리(n번 페이지)를 db에 저장 -> 페이지 숫자랑 내용이랑 등등 + 이미지 UUID생성
+        # 2. 받은 스토리(n번 페이지) 셀러리로 넘겨서 달리로 그림 생성 하기 + 위 이미지 UUiD전달
+        # 3. if n+1번 페이지 제작 중 == 6 <- 분기 이유 : 프롬프팅 함수가 달라짐.
+        # 3-1. 이전에 받은 값(n) 받아서 이야기 2개 생성
+        # 3-2. 답변 생성되면 프론트로 다시 보내기 -> 두개다 반환 (영어버전 한글 버전 다) n++
+        # 3. elif 마지막이 아니라면(2-5번 페이지 제작중)
+        # 3-1. 이전에 받은 값(n) 받아서 이야기 2개 생성
+        # 3-2. 답변 생성되면 프론트로 다시 보내기 -> 두개다 반환 (영어버전 한글 버전 다) n++
+        # else 사용자의 마지막 선택 end / n이 7일때
+        # 1. 받은 스토리(6번 페이지)를 db에 저장 -> 페이지 숫자랑 내용이랑 등등 + 이미지 UUID
+        # 2. 받은 스토리(6번 페이지) 셀러리로 넘겨서 달리로 그림 생성 하기 + 위 이미지 UUiD
 
         # # 달리 이미지 생성
         # def generate_dalle_image(self, image_uuid, enContent):
