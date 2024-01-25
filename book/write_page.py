@@ -51,6 +51,7 @@ class WritePage(WebsocketConsumer):
         else:
             # 'book_id' 속성이 없는 경우
             print("No book to delete")
+            
     # --------------------------------------------------------------------- 소켓 통신 (메세지)
     def receive(self, text_data):
         text_data_json = json.loads(text_data)  # data를 받음
