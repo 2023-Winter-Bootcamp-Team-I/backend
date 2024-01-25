@@ -182,30 +182,7 @@ class WritePage(WebsocketConsumer):
                                f"2.english",
                 }
             ]
-        elif user_info['language'] == "en":
-            self.conversation = [
-                {
-                    "role": "system",
-                    "content": f"당신은 동화 작가 역할을 해주었으면 합니다."
-                               f"<초기 정보>"
-                               f"주인공 이름: {user_info['userName']}"
-                               f"주인공 성별: {user_info['gender']}"
-                               f"대상 연령: {user_info['age']}"
-                               f"원작 동화: {user_info['fairyTale']}"
-                               f"<초기 정보 끝>"
-                               f"<초기 정보>를 기반으로, 저에게 두 가지의 서로 다른 이야기의 초반부를 한 문장씩 제시해주세요."
-                               f"두 가지의 이야기 중 제가 하나의 이야기를 선택하기 전 까지 기다려주세요."
-                               f"제가 선택을 한 후 제가 선택한 이야기에 이어서 저에게 두 가지의 서로 다른 이야기를 한 문장씩 제시해주세요."
-                               f"문장마다 한글로도 번역 해주세요."
-                               f"서로 다른 이야기지만, <초기 정보>를 기반으로 해야하는 것은 같습니다."
-                               f"두 문장 이내로 대답해주세요."
-                               f"아래와 같은 양식 대로만 부탁드립니다."
-                               f"1.english"
-                               f"1.korean"
-                               f"2.english"
-                               f"2.korean"
-                },
-            ]
+
 
     def generate_ing_gpt_responses(self, choice):
         # 지피티씨 호출해서 만들고 반환하기. -> 내가 선택한 이야기로 진행해주고 계속 이어서 두가지로 해줘
