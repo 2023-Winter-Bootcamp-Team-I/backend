@@ -240,7 +240,7 @@ class WritePage(WebsocketConsumer):
         # GPT-3 스트리밍 API 호출
         for response in openai.ChatCompletion.create(
                 # model="gpt-3.5-turbo",
-                model="gpt-4",
+                model="gpt-3.5-turbo",
                 messages=self.conversation,
                 temperature=0.5,
                 stream=True
