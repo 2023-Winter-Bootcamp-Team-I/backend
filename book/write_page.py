@@ -176,7 +176,6 @@ class WritePage(WebsocketConsumer):
                                f"문장마다 영어로도 번역 해주세요."
                                f"서로 다른 이야기지만, <초기 정보>를 기반으로 해야하는 것은 같습니다."
                                f"두 문장 이내로 대답해주세요."
-                               f"한국어로 이야기1 -> 영어로 이야기1, 한국어로 이야기2, 영어로 이야기2 순으로 아래와 같이 응답바랍니다."
                                f"1.korean"
                                f"1.english"
                                f"2.korean"
@@ -275,7 +274,7 @@ class WritePage(WebsocketConsumer):
         openai.api_key = get_secret("GPT_KEY")
         # GPT-3 스트리밍 API 호출
         for response in openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4",
                 # model="gpt-4",
                 messages=self.conversation,
                 temperature=0.5,
