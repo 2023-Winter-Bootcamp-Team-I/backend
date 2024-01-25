@@ -42,3 +42,4 @@ django-cors-headers==3.9.0
 celery==5.2.0
 django-celery-beat
 django-celery-results
+gTTS

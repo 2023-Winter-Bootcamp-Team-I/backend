@@ -7,6 +7,7 @@ from channels.generic.websocket import WebsocketConsumer
 from django.db import IntegrityError
 from pip._internal.operations.prepare import get_file_url
 from .tasks import generate_dalle_image_async  # tasks.py 에서 정의한 함수 임포트
+from .tasks import gtts_async
 
 from book.models import Book
 from page.models import Page
@@ -18,7 +19,7 @@ import uuid
 class WritePage(WebsocketConsumer):
     # ----------------------------------------------------------------------- 소켓 통신 연결
     def connect(self):
-        # print("connecting")
+        print("connecting") # 지금 이건 왜 안찍히져
         self.accept()
         # 책-페이지 저장 리스트 아래 작성
         self.book_content = []  # 전체 컨텐츠 저장
@@ -50,21 +51,21 @@ class WritePage(WebsocketConsumer):
         else:
             # 'book_id' 속성이 없는 경우
             print("No book to delete")
-
+            
     # --------------------------------------------------------------------- 소켓 통신 (메세지)
     def receive(self, text_data):
         text_data_json = json.loads(text_data)  # data를 받음
         page_num = text_data_json.get('pageCnt')
         if text_data_json['type'] == 'start':
             user_info = self.extract_user_info(text_data_json)
-
+            print('start 진입')
             try:
                 user_id = text_data_json['userId']
                 username = text_data_json['userName']
                 fairytale = text_data_json['fairyTale']
                 gender = text_data_json['gender']
                 age = int(text_data_json['age'])
-
+                print('try 진입')
                 # 수정된 부분: user_id를 사용하여 User 모델의 인스턴스를 가져와서 할당
                 user_instance = User.objects.get(user_id=user_id)
                 book = self.save_book_to_db(user_instance, username, fairytale, gender,age)
@@ -87,17 +88,26 @@ class WritePage(WebsocketConsumer):
         elif text_data_json['type'] == 'ing':
             # 책 내용 가져온거 처리하기
             choice = text_data_json.get('choice')
-
+            print("ing")
             ko_content = text_data_json.get('koContent')
             en_content = text_data_json.get('enContent')
 
             self.book_content.append(ko_content) # 선택한 내용 저장
 
-            image_uuid = str(uuid.uuid4())  # db에 uuid 넣은 이미지 저장
-            self.save_story_to_db(image_uuid, page_num, ko_content['content'], en_content['content'])
+            # 이미지 저장
+            image_uuid = str(uuid.uuid4())
+            self.save_page_story_to_db(image_uuid, page_num, ko_content['content'], en_content['content']) # db에 uuid 넣은 이미지 저장
+            image = generate_dalle_image_async.delay(image_uuid, en_content['content'])  # 비동기로 해주었음 tasks.py ㄱ
 
-            # 비동기로 해주었음 tasks.py ㄱ
-            image = generate_dalle_image_async.delay(image_uuid, en_content['content'])  # 비동기 함수 ??
+
+            # 한국어 음성파일 비동기
+            ko_tts_uuid = str(uuid.uuid4())
+            ko_tts = gtts_async.delay(ko_tts_uuid, ko_content['content'], 'ko')
+            # 영어 음성파일 비동기
+            en_tts_uuid = str(uuid.uuid4())
+            en_tts = gtts_async.delay(en_tts_uuid, en_content['content'], 'en')
+            # 음성 파일 저장
+            self.save_page_tts_to_db(ko_tts_uuid, en_tts_uuid, page_num)
 
             # 6번째 페이지 처리
             if page_num == 6:
@@ -108,20 +118,34 @@ class WritePage(WebsocketConsumer):
                 self.generate_ing_gpt_responses(choice)  # 중간
                 page_num += 1
                 self.send_response_to_client(page_num)
+
+
         elif text_data_json['type'] == 'end':  # 마지막 선택 처리
 
             ko_content = text_data_json.get('koContent')
             en_content = text_data_json.get('enContent')
             image_uuid = str(uuid.uuid4())
 
-            self.save_story_to_db(image_uuid, page_num, ko_content['content'], en_content['content'])
+            self.save_page_story_to_db(image_uuid, page_num, ko_content['content'], en_content['content'])
+
 
             # 비동기로 해주었음 tasks.py ㄱ
             image = generate_dalle_image_async.delay(image_uuid, en_content['content'])  # 리턴 값이 url임 -> 나중에 비동기
 
+
+            # 한국어 음성파일 비동기
+            ko_tts_uuid = str(uuid.uuid4())
+            ko_tts = gtts_async.delay(ko_tts_uuid, ko_content['content'], 'ko')
+            # 영어 음성파일 비동기
+            en_tts_uuid = str(uuid.uuid4())
+            en_tts = gtts_async.delay(en_tts_uuid, en_content['content'], 'en')
+            # 음성 파일 저장
+            self.save_page_tts_to_db(ko_tts_uuid, en_tts_uuid, page_num)
+
+
             self.send(text_data=json.dumps({"bookId": self.book_id}))
 
-            print(image)
+            # print(image)
 
     ######################## 함수들 ########################
     # --------------------------------------------------------------------- 이야기 만들 때 필요한 함수들
@@ -219,7 +243,7 @@ class WritePage(WebsocketConsumer):
     # -------------------------------------------------------------------- db 넣는 함수들
     # db에 page 저장
 
-    def save_story_to_db(self, image_uuid, page_num, ko_content, en_content):
+    def save_page_story_to_db(self, image_uuid, page_num, ko_content, en_content):
         try:
             book = Book.objects.get(book_id=self.book_id)
             imageUrl = get_secret("FILE_URL") + "/" + image_uuid + ".jpg"
@@ -227,6 +251,20 @@ class WritePage(WebsocketConsumer):
                                 en_content=en_content)
         except Book.DoesNotExist:
             print(f"Book with id {self.book_id} does not exist.")
+
+    def save_page_tts_to_db(self, ko_uuid, en_uuid, page_num):
+        try:
+            book = Book.objects.get(book_id=self.book_id)
+            page = Page.objects.get(book_id=book.book_id, page_num=page_num)
+            page.ko_tts_url = get_secret("FILE_URL") + "/" + ko_uuid + ".mp3"
+            page.en_tts_url = get_secret("FILE_URL") + "/" + en_uuid + ".mp3"
+
+            page.save()
+
+        except Book.DoesNotExist:
+            print(f"Book with id {self.book_id} does not exist.")
+        except Page.DoesNotExist:
+            print(f"Page for book with id {self.book_id} does not exist.")
 
     def save_book_to_db(self, user_id, username, fairytale, gender, age):
          return Book.objects.create(user_id=user_id, fairytale=fairytale, username=username, gender=gender,age=age)
