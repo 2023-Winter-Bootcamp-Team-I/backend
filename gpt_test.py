@@ -45,3 +45,5 @@ while True:
         if chunk:
             print(chunk, end='')
     user_content = input("user : ")
+
+

@@ -19,7 +19,8 @@ def generate_dalle_image_async(image_uuid, enContent):
         openai.api_key = get_secret("GPT_KEY")
         response = openai.Image.create(
             model="dall-e-3",
-            prompt=f"{enContent} 2D animation style.",
+            prompt=f"{enContent}"
+                   f" Please draw the sentence in a cute art 2d style.",
             n=1,
             size="1024x1024"
         )
