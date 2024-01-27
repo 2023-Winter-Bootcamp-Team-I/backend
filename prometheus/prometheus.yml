@@ -21,3 +21,4 @@ scrape_configs: # 데이타 수집 대상과 방법을 정의하는 부분
       static_configs:
       - targets: [ 'localhost:8000', 'host.docker.internal:8000','backend-service:8000'] # 요기 수정 필요...maybe?
     scrape_interval: 5s
+
