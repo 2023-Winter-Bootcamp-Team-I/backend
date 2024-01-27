@@ -173,6 +173,7 @@ class WritePage(WebsocketConsumer):
         # f"문장마다 영어로도 번역 해주세요."
         # f"서로 다른 이야기지만, <초기 정보>를 기반으로 해야하는 것은 같습니다."
         # f"두 문장 이내로 대답해주세요."
+        # f"아래와 같은 양식 대로 '@'뒤에 바로 문장이 오도록 부탁드립니다."
             self.conversation = [
                 {
                     "role": "system",
@@ -181,10 +182,12 @@ class WritePage(WebsocketConsumer):
                                f"Main character's name:{user_info['userName']}, Main character's gender:{user_info['gender']}, Target age group:{user_info['age']}, Original fairy tale:{user_info['fairyTale']} "
                                f"<End of Initial Information>"
                                f"Based on the <Initial Information>, please present me with the beginnings of two different stories, each in one sentence. Wait for me to choose one of the stories before continuing. Once I have made my choice, continue with the story I selected by presenting me with two different story progressions, each in one sentence. Please also translate each sentence into English. Although the stories should be different, they must be based on the <Initial Information>. Please answer within two sentences."
-                               f"1️⃣korean"
-                               f"1️⃣english"
-                               f"2️⃣korean"
-                               f"2️⃣english"
+                               f"Please replace the existing protagonist with {user_info['userName']} of the <Initial Information>."
+                               f"Please follow the format where the sentence comes right after '@' as below."
+                               f"@korean"
+                               f"@english"
+                               f"#korean"
+                               f"#english"
                 }
             ]
 
@@ -210,10 +213,11 @@ class WritePage(WebsocketConsumer):
                            f"{self.book_content}"
                            f"<End of Previous Story>"
                            f"Based on the <Previous Story>, please present me with the beginnings of two different stories, each in one sentence. Wait for me to choose one of the stories before continuing. After I make my choice, continue with the story I selected by presenting me with two different continuations, each in one sentence. Please also translate each sentence into English. Although the stories should be different, they must be based on the <Previous Story Information>."
-                           f"1️⃣korean"
-                           f"1️⃣english"
-                           f"2️⃣korean"
-                           f"2️⃣english"
+                           f"Please follow the format where the sentence comes right after '@' as below."
+                           f"@korean"
+                           f"@english"
+                           f"#korean"
+                           f"#english"
             },
         ]
 
@@ -231,8 +235,9 @@ class WritePage(WebsocketConsumer):
                            f"{self.book_content}"
                            f"<End of Previous Story>"
                            f"Please write a fairy tale story to its conclusion, continuing from the <Previous Story> as a single narrative."
-                           f"1️⃣korean"
-                           f"1️⃣english"
+                           f"Please follow the format where the sentence comes right after '@' as below."
+                           f"@korean"
+                           f"@english"
             },
         ]
 
