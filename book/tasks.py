@@ -21,7 +21,8 @@ def generate_dalle_image_async(image_uuid, enContent):
         response = openai.Image.create(
             model="dall-e-3",
             prompt=f"{enContent}"
-                   f" Please draw the sentence in a cute art 2d style.",
+                   f"Please draw the sentence in a cute art 2d style."
+                   f"Please draw only in pictures",
             n=1,
             size="1024x1024"
         )
@@ -33,7 +34,7 @@ def generate_dalle_image_async(image_uuid, enContent):
         return None
 
 @shared_task
-def gtts_async(tts_uuid,content,lan):
+def gtts_async(tts_uuid, content, lan):
     print("진입")
 
     # 네이버 API 사용을 위한 설정 (클라이언트 ID와 시크릿)
