@@ -1,55 +1,6 @@
 version: '3' # 파일 규격 버전
 
 services: # 이 항목 밑에 실행하려는 컨테이너 들을 정의
-  # 임의로 추가했습니다
-  backend:
-    # 환경 설정 부분
-    env_file:
-      - ./settings/.env
-    build:
-      context: ./backend
-      dockerfile: dockerfile
-    container_name: backend
-    volumes:
-      - ./backend:/backend
-    # command : 컨테이너가 띄워질 때 실행하는 명령어 / 서버실행
-    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
-    restart: on-failure
-    ports:
-      - "8000:8000"
-    # 가상 네트워크 연결
-    links:
-      - mysql:mysql
-    networks:
-      - monitor
-    depends_on:
-      - db
-    expose:
-      - 8000
-
-  # 임의로 추가했습니다
-  frontend:
-    container_name: frontend
-    # 환경 설정 부분
-    env_file:
-      - ./settings/.env
-    build:
-      # context : 현재 폴더의 frontend 폴더에 있는 도커파일을 쓰겠다
-      context: ./frontend
-    command: [ "npm", "start" ]
-    # command : 컨테이너가 띄워질 때 실행하는 명령어 / 서버실행
-    restart: always
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./frontend/src:/frontend/src # 가상 네트워크 연결
-    networks:
-      - monitor
-    tty: true
-    stdin_open: true
-    depends_on:
-      - backend
-
   rabbitmq:
     image: "rabbitmq:3-management"
     ports:
@@ -82,6 +33,8 @@ services: # 이 항목 밑에 실행하려는 컨테이너 들을 정의
     restart: always
     environment:
       WAIT_HOSTS: db:3306, rabbitmq:5672
+    expose:
+      - "8000"
 
   celery_worker:
     build: .
@@ -103,31 +56,39 @@ services: # 이 항목 밑에 실행하려는 컨테이너 들을 정의
       - rabbitmq
     restart: always
 
+  alertmanager:
+    container_name: alertmanager
+    image: prom/alertmanager
+    ports:
+      - 9093:9093
+    volumes:
+      - ./alertmanager/:/etc/alertmanager/
+    restart: always
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+
   # 추가한 부분
   prometheus:
     image: prom/prometheus:latest
-    container_name: prometheus
-    user: root
-    command:
-      - --config.file=/etc/prometheus/prometheus.yml
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml # 일단 이렇게 해보자
+      - ./prometheus:/etc/prometheus
     ports:
       - "9090:9090"
-    networks:
-      - monitor # 일단 monitor로 설정
-    depends_on:
-      - backend
+    links:
+      - alertmanager
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    restart: always
 
   grafana:
     image: grafana/grafana:latest
-    container_name: grafana
     volumes:
-      - grafana-storage:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning # 일단 이렇게 해보자
+      - ./grafana:/var/lib/grafana
     ports:
       - "3000:3000"
-    networks:
-      - monitor # 일단 monitor로 설정
     depends_on:
       - prometheus
