@@ -21,7 +21,8 @@ def generate_dalle_image_async(image_uuid, enContent):
         response = openai.Image.create(
             model="dall-e-3",
             prompt=f"{enContent}"
-                   f" Please draw the sentence in a cute art 2d style.",
+                   f" Please draw the sentence in a cute art 2d style."
+                   f"Please draw only in pictures.",
             n=1,
             size="1024x1024"
         )

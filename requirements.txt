@@ -43,3 +43,5 @@ celery==5.2.0
 django-celery-beat
 django-celery-results
 gTTS
+prometheus_client
+django-prometheus
