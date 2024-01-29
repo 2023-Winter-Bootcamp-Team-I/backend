@@ -35,7 +35,7 @@ def generate_dalle_image_async(image_uuid, enContent):
         return None
 
 @shared_task
-def gtts_async(tts_uuid,content,lan):
+def gtts_async(tts_uuid, content, lan):
     print("진입")
 
     # 네이버 API 사용을 위한 설정 (클라이언트 ID와 시크릿)

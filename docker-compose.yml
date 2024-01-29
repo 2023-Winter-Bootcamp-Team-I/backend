@@ -1,6 +1,6 @@
-version: '3'
+version: '3' # 파일 규격 버전
 
-services:
+services: # 이 항목 밑에 실행하려는 컨테이너 들을 정의
   rabbitmq:
     image: "rabbitmq:3-management"
     ports:
@@ -33,6 +33,8 @@ services:
     restart: always
     environment:
       WAIT_HOSTS: db:3306, rabbitmq:5672
+    expose:
+      - "8000"
 
   celery_worker:
     build: .
@@ -53,6 +55,7 @@ services:
       - web
       - rabbitmq
     restart: always
+
 
   prometheus:
     image: prom/prometheus

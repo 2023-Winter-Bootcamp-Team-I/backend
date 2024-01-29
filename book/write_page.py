@@ -173,6 +173,7 @@ class WritePage(WebsocketConsumer):
         # f"문장마다 영어로도 번역 해주세요."
         # f"서로 다른 이야기지만, <초기 정보>를 기반으로 해야하는 것은 같습니다."
         # f"두 문장 이내로 대답해주세요."
+
         self.conversation = [
             {
                 "role": "system",
